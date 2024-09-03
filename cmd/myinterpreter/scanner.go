@@ -94,6 +94,7 @@ func (s *Scanner) ScanTokens() {
 				for i < len(s.source) && s.source[i] != '\n' {
 					i++
 				}
+				s.line++
 			} else {
 				fmt.Println("SLASH / null")
 			}
