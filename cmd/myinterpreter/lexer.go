@@ -98,6 +98,10 @@ func (l *Lexer) ScanTokens() {
 		case l.ch == '"':
 			l.handleStringLiteral()
 		default:
+			if l.isAlpha() {
+				l.handleIdentifier()
+				continue;
+			}
 			if l.isWhitespace() {
 				if l.ch == '\n' {
 					l.line++
@@ -114,6 +118,17 @@ func (l *Lexer) ScanTokens() {
 	if len(l.errors) > 0 {
 		os.Exit(65)
 	}
+}
+
+func (l *Lexer) handleIdentifier() {
+	startPosition := l.position
+	
+	for l.isAlpha() || l.isDigit() {
+        l.readChar()
+    }
+
+	identifier := l.source[startPosition:l.position]
+	fmt.Printf("IDENTIFIER %s null\n", identifier)
 }
 
 func (l *Lexer) handleStringLiteral() {
@@ -147,17 +162,34 @@ func (l *Lexer) handleNumberLiteral() {
 	}
 
 	// Check for fractional part
+	floatingPoint := false
 	if l.ch == '.' && l.isDigitAtNextPosition() {
 		l.readChar() // consume '.'
 		for l.isDigit() {
 			l.readChar()
 		}
+		floatingPoint = true
 	}
 
 	literal := l.source[startPosition:l.position]
+	value := literal
+	if floatingPoint {
+		numZero := 0
+		for i := len(literal) - 1; i >= 0; i-- {
+			if literal[i] == '0' {
+                numZero++
+            } else {
+                break
+            }
+		}
+		// Remove trailing zeroes from the fractional part
+		if numZero > 0 {
+			value = value[:len(value)-numZero + 1]
+		}
+	}
 
 	// Convert the value to a floating-point representation
-	fmt.Printf("NUMBER %s %s\n", literal, formatAsFloat(literal))
+	fmt.Printf("NUMBER %s %s\n", literal, formatAsFloat(value))
 	l.position--
 	l.nextPosition--
 }
@@ -165,6 +197,10 @@ func (l *Lexer) handleNumberLiteral() {
 
 func (l *Lexer) isDigit() bool {
 	return l.ch >= '0' && l.ch <= '9'
+}
+
+func (l *Lexer) isAlpha() bool {
+	return l.ch >= 'a' && l.ch <= 'z' || l.ch >= 'A' && l.ch <= 'Z' || l.ch == '_'
 }
 
 func (l *Lexer) isDigitAtNextPosition() bool {
