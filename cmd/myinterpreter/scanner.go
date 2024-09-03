@@ -16,6 +16,7 @@ const (
 	PLUS = '+'
 	MINUS = '-'
 	SEMICOLON = ';'
+	EQUAL = '='
 )
 
 type Scanner struct {
@@ -33,8 +34,8 @@ func NewScanner(source string) *Scanner {
 }
 
 func (s *Scanner) ScanTokens() {
-	for _, content := range s.source {
-		switch content {
+	for i := 0; i < len(s.source); i++ {
+		switch content := s.source[i]; content{
 		case LEFT_PAREN:
 			fmt.Println("LEFT_PAREN ( null")
 		case RIGHT_PAREN:
@@ -55,6 +56,13 @@ func (s *Scanner) ScanTokens() {
 			fmt.Println("MINUS - null")
 		case SEMICOLON:
 			fmt.Println("SEMICOLON ; null")
+		case EQUAL:
+			if i+1 < len(s.source) && s.source[i+1] == EQUAL {
+				fmt.Println("EQUAL_EQUAL == null")
+				i++ // skip the next character as it's part of ==
+			} else {
+				fmt.Println("EQUAL = null")
+			}
 		default:
 			if isWhitespace(content) {
 				if content == '\n' {
@@ -72,12 +80,12 @@ func (s *Scanner) ScanTokens() {
 	}
 }
 
-func (s *Scanner) reportError(content rune) {
+func (s *Scanner) reportError(content byte) {
 	errorMessage := fmt.Sprintf("[line %d] Error: Unexpected character: %c", s.line, content)
 	fmt.Fprintln(os.Stderr, errorMessage)
 	s.errors = append(s.errors, errorMessage)
 }
 
-func isWhitespace(r rune) bool {
+func isWhitespace(r byte) bool {
 	return r == ' ' || r == '\r' || r == '\t' || r == '\n'
 }
