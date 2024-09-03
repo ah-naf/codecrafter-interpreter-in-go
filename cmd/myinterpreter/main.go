@@ -29,6 +29,6 @@ func main() {
 		os.Exit(1)
 	}
 	
-	scanner := NewScanner(string(rawFileContent))
+	scanner := NewLexer(string(rawFileContent))
 	scanner.ScanTokens()
 }
