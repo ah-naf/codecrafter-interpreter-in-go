@@ -17,6 +17,7 @@ const (
 	MINUS = '-'
 	SEMICOLON = ';'
 	EQUAL = '='
+	BANG = '!'
 )
 
 type Scanner struct {
@@ -62,6 +63,13 @@ func (s *Scanner) ScanTokens() {
 				i++ // skip the next character as it's part of ==
 			} else {
 				fmt.Println("EQUAL = null")
+			}
+		case BANG:
+			if i+1 < len(s.source) && s.source[i+1] == EQUAL {
+				fmt.Println("BANG_EQUAL != null")
+				i++ // skip the next character as it's part of ==
+			} else {
+				fmt.Println("BANG ! null")
 			}
 		default:
 			if isWhitespace(content) {
