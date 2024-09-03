@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"unicode"
 )
 
 type Lexer struct {
@@ -36,63 +37,65 @@ func (l *Lexer) readChar() {
 
 func (l *Lexer) ScanTokens() {
 	for l.ch != 0 {
-		switch l.ch {
-		case LEFT_PAREN:
+		switch {
+		case l.isDigit():
+			l.handleNumberLiteral()
+		case l.ch == LEFT_PAREN:
 			fmt.Println("LEFT_PAREN ( null")
-		case RIGHT_PAREN:
+		case l.ch == RIGHT_PAREN:
 			fmt.Println("RIGHT_PAREN ) null")
-		case LEFT_BRACE:
+		case l.ch == LEFT_BRACE:
 			fmt.Println("LEFT_BRACE { null")
-		case RIGHT_BRACE:
+		case l.ch == RIGHT_BRACE:
 			fmt.Println("RIGHT_BRACE } null")
-		case STAR:
+		case l.ch == STAR:
 			fmt.Println("STAR * null")
-		case DOT:
+		case l.ch == DOT:
 			fmt.Println("DOT . null")
-		case COMMA:
+		case l.ch == COMMA:
 			fmt.Println("COMMA , null")
-		case PLUS:
+		case l.ch == PLUS:
 			fmt.Println("PLUS + null")
-		case MINUS:
+		case l.ch == MINUS:
 			fmt.Println("MINUS - null")
-		case SEMICOLON:
+		case l.ch == SEMICOLON:
 			fmt.Println("SEMICOLON ; null")
-		case EQUAL:
+		case l.ch == EQUAL:
 			if l.peekChar() == EQUAL {
 				fmt.Println("EQUAL_EQUAL == null")
 				l.readChar()
 			} else {
 				fmt.Println("EQUAL = null")
 			}
-		case BANG:
+		case l.ch == BANG:
 			if l.peekChar() == EQUAL {
 				fmt.Println("BANG_EQUAL != null")
 				l.readChar()
 			} else {
 				fmt.Println("BANG ! null")
 			}
-		case LT:
+		case l.ch == LT:
 			if l.peekChar() == EQUAL {
 				fmt.Println("LESS_EQUAL <= null")
 				l.readChar()
 			} else {
 				fmt.Println("LESS < null")
 			}
-		case GT:
+		case l.ch == GT:
 			if l.peekChar() == EQUAL {
 				fmt.Println("GREATER_EQUAL >= null")
 				l.readChar()
 			} else {
 				fmt.Println("GREATER > null")
 			}
-		case SLASH:
+		case l.ch == SLASH:
 			if l.peekChar() == SLASH {
 				// It's a comment, skip until end of line
 				l.skipComment()
 			} else {
 				fmt.Println("SLASH / null")
 			}
-		case '"':
+		case l.ch == '"':
 			l.handleStringLiteral()
 		default:
 			if l.isWhitespace() {
@@ -134,6 +137,62 @@ func (l *Lexer) handleStringLiteral() {
 		}
 	}
 }
+
+func (l *Lexer) handleNumberLiteral() {
+	startPosition := l.position
+
+	// Read the integer part
+	for l.isDigit() {
+		l.readChar()
+	}
+
+	// Check for fractional part
+	if l.ch == '.' && l.isDigitAtNextPosition() {
+		l.readChar() // consume '.'
+		for l.isDigit() {
+			l.readChar()
+		}
+	}
+
+	literal := l.source[startPosition:l.position]
+
+	// Convert the value to a floating-point representation
+	fmt.Printf("NUMBER %s %s\n", literal, formatAsFloat(literal))
+	l.position--
+	l.nextPosition--
+}
+
+
+func (l *Lexer) isDigit() bool {
+	return l.ch >= '0' && l.ch <= '9'
+}
+
+func (l *Lexer) isDigitAtNextPosition() bool {
+	if l.nextPosition >= len(l.source) {
+		return false
+	}
+	return unicode.IsDigit(rune(l.source[l.nextPosition]))
+}
+
+// Helper function to format a number literal as a floating-point number
+func formatAsFloat(literal string) string {
+	// Ensure the literal has a decimal point
+	if !containsDecimalPoint(literal) {
+		return literal + ".0"
+	}
+	return literal
+}
+
+// Helper function to check if a literal contains a decimal point
+func containsDecimalPoint(literal string) bool {
+	for i := 0; i < len(literal); i++ {
+		if literal[i] == '.' {
+			return true
+		}
+	}
+	return false
+}
+
 
 func (l *Lexer) reportErrorUnterminatedString() {
 	errorMessage := fmt.Sprintf("[line %d] Error: Unterminated string.", l.line)

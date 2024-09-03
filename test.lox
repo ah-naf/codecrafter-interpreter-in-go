@@ -1,1 +1,1 @@
-// comment
+"hello" = "foo" != (30 == 35)
