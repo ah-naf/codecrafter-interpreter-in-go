@@ -8,6 +8,8 @@ import (
 const (
 	LEFT_PAREN  = '('
 	RIGHT_PAREN = ')'
+	LEFT_BRACE = '{'
+	RIGHT_BRACE = '}'
 )
 
 func main() {
@@ -42,7 +44,10 @@ func main() {
 			fmt.Println("LEFT_PAREN ( null")
 		case RIGHT_PAREN:
 			fmt.Println("RIGHT_PAREN ) null")
-            
+        case LEFT_BRACE:
+            fmt.Println("LEFT_BRACE { null")
+		case RIGHT_BRACE:
+			fmt.Println("RIGHT_BRACE } null")
 		}
 	}
 	fmt.Println("EOF  null")
