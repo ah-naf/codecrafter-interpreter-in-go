@@ -128,7 +128,14 @@ func (l *Lexer) handleIdentifier() {
     }
 
 	identifier := l.source[startPosition:l.position]
-	fmt.Printf("IDENTIFIER %s null\n", identifier)
+	keyword, ok := RESERVED_WORDS[identifier]
+
+	if !ok {
+		fmt.Printf("IDENTIFIER %s null\n", identifier)
+	} else {
+		fmt.Printf("%s %s null\n", keyword, identifier)
+	}
+	
 }
 
 func (l *Lexer) handleStringLiteral() {
