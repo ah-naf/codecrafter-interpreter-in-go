@@ -8,18 +8,19 @@ import (
 const (
 	LEFT_PAREN  = '('
 	RIGHT_PAREN = ')'
-	LEFT_BRACE = '{'
+	LEFT_BRACE  = '{'
 	RIGHT_BRACE = '}'
-	STAR = '*'
-	DOT = '.'
-	COMMA = ','
-	PLUS = '+'
-	MINUS = '-'
-	SEMICOLON = ';'
-	EQUAL = '='
-	BANG = '!'
-	LT = '<'
-	GT = '>'
+	STAR        = '*'
+	DOT         = '.'
+	COMMA       = ','
+	PLUS        = '+'
+	MINUS       = '-'
+	SEMICOLON   = ';'
+	EQUAL       = '='
+	BANG        = '!'
+	LT          = '<'
+	GT          = '>'
+	SLASH       = '/'
 )
 
 type Scanner struct {
@@ -38,7 +39,7 @@ func NewScanner(source string) *Scanner {
 
 func (s *Scanner) ScanTokens() {
 	for i := 0; i < len(s.source); i++ {
-		switch content := s.source[i]; content{
+		switch content := s.source[i]; content {
 		case LEFT_PAREN:
 			fmt.Println("LEFT_PAREN ( null")
 		case RIGHT_PAREN:
@@ -69,23 +70,32 @@ func (s *Scanner) ScanTokens() {
 		case BANG:
 			if i+1 < len(s.source) && s.source[i+1] == EQUAL {
 				fmt.Println("BANG_EQUAL != null")
-				i++ // skip the next character as it's part of ==
+				i++ // skip the next character as it's part of !=
 			} else {
 				fmt.Println("BANG ! null")
 			}
 		case LT:
 			if i+1 < len(s.source) && s.source[i+1] == EQUAL {
 				fmt.Println("LESS_EQUAL <= null")
-				i++ // skip the next character as it's part of ==
+				i++ // skip the next character as it's part of <=
 			} else {
 				fmt.Println("LESS < null")
 			}
 		case GT:
 			if i+1 < len(s.source) && s.source[i+1] == EQUAL {
 				fmt.Println("GREATER_EQUAL >= null")
-				i++ // skip the next character as it's part of ==
+				i++ // skip the next character as it's part of >=
 			} else {
 				fmt.Println("GREATER > null")
+			}
+		case SLASH:
+			if i+1 < len(s.source) && s.source[i+1] == SLASH {
+				// It's a comment, skip until end of line
+				for i < len(s.source) && s.source[i] != '\n' {
+					i++
+				}
+			} else {
+				fmt.Println("SLASH / null")
 			}
 		default:
 			if isWhitespace(content) {
