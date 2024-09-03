@@ -59,7 +59,7 @@ func main() {
 		case DOT:
 			fmt.Println("DOT . null")
 		case COMMA:
-			fmt.Println("COMMA, null")
+			fmt.Println("COMMA , null")
 		case PLUS:
 			fmt.Println("PLUS + null")
 		case MINUS:
