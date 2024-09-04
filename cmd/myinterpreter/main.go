@@ -1,11 +1,10 @@
+// main.go
 package main
 
 import (
 	"fmt"
 	"os"
 )
-
-
 
 func main() {
 	if len(os.Args) < 3 {
@@ -22,18 +21,23 @@ func main() {
 		os.Exit(1)
 	}
 
+	logEnabled := false
+	if command == "tokenize" {
+		logEnabled = true
+	}
+
 	switch command {
 	case "tokenize":
-		scanner := NewLexer(string(rawFileContent))
+		scanner := NewLexer(string(rawFileContent), logEnabled)
 		scanner.ScanTokens()
 	case "parse":
-		scanner := NewLexer(string(rawFileContent))
+		scanner := NewLexer(string(rawFileContent), logEnabled)
+		scanner.ScanTokens() // Tokenize first
 		parser := NewParser(scanner)
 		ast := parser.Parse()
-		fmt.Println(ast.String())
+		fmt.Println(ast.String()) // Print the AST
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown command: %s\n", command)
 		os.Exit(1)
 	}
 }
-

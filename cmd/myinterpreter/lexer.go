@@ -37,15 +37,17 @@ type Lexer struct {
 	nextPosition int
 	ch          byte
 	tokens      []Token
+	logEnabled  bool // New field to control logging
 }
 
 // NewLexer initializes a new lexer for the given source code
-func NewLexer(source string) *Lexer {
+func NewLexer(source string, logEnabled bool) *Lexer {
 	l := &Lexer{
-		source: source,
-		line:   1,
-		errors: []string{},
-		tokens: []Token{},
+		source:     source,
+		line:       1,
+		errors:     []string{},
+		tokens:     []Token{},
+		logEnabled: logEnabled, // Set logEnabled
 	}
 	l.readChar()
 	return l
@@ -70,76 +72,76 @@ func (l *Lexer) ScanTokens() {
 			l.handleNumberLiteral()
 		case l.ch == '(':
 			l.addToken("LEFT_PAREN", "(", "")
-			fmt.Println("LEFT_PAREN ( null")
+			l.log("LEFT_PAREN ( null")
 		case l.ch == ')':
 			l.addToken("RIGHT_PAREN", ")", "")
-			fmt.Println("RIGHT_PAREN ) null")
+			l.log("RIGHT_PAREN ) null")
 		case l.ch == '{':
 			l.addToken("LEFT_BRACE", "{", "")
-			fmt.Println("LEFT_BRACE { null")
+			l.log("LEFT_BRACE { null")
 		case l.ch == '}':
 			l.addToken("RIGHT_BRACE", "}", "")
-			fmt.Println("RIGHT_BRACE } null")
+			l.log("RIGHT_BRACE } null")
 		case l.ch == '*':
 			l.addToken("STAR", "*", "")
-			fmt.Println("STAR * null")
+			l.log("STAR * null")
 		case l.ch == '.':
 			l.addToken("DOT", ".", "")
-			fmt.Println("DOT . null")
+			l.log("DOT . null")
 		case l.ch == ',':
 			l.addToken("COMMA", ",", "")
-			fmt.Println("COMMA , null")
+			l.log("COMMA , null")
 		case l.ch == '+':
 			l.addToken("PLUS", "+", "")
-			fmt.Println("PLUS + null")
+			l.log("PLUS + null")
 		case l.ch == '-':
 			l.addToken("MINUS", "-", "")
-			fmt.Println("MINUS - null")
+			l.log("MINUS - null")
 		case l.ch == ';':
 			l.addToken("SEMICOLON", ";", "")
-			fmt.Println("SEMICOLON ; null")
+			l.log("SEMICOLON ; null")
 		case l.ch == '=':
 			if l.peekChar() == '=' {
 				l.addToken("EQUAL_EQUAL", "==", "")
-				fmt.Println("EQUAL_EQUAL == null")
+				l.log("EQUAL_EQUAL == null")
 				l.readChar()
 			} else {
 				l.addToken("EQUAL", "=", "")
-				fmt.Println("EQUAL = null")
+				l.log("EQUAL = null")
 			}
 		case l.ch == '!':
 			if l.peekChar() == '=' {
 				l.addToken("BANG_EQUAL", "!=", "")
-				fmt.Println("BANG_EQUAL != null")
+				l.log("BANG_EQUAL != null")
 				l.readChar()
 			} else {
 				l.addToken("BANG", "!", "")
-				fmt.Println("BANG ! null")
+				l.log("BANG ! null")
 			}
 		case l.ch == '<':
 			if l.peekChar() == '=' {
 				l.addToken("LESS_EQUAL", "<=", "")
-				fmt.Println("LESS_EQUAL <= null")
+				l.log("LESS_EQUAL <= null")
 				l.readChar()
 			} else {
 				l.addToken("LESS", "<", "")
-				fmt.Println("LESS < null")
+				l.log("LESS < null")
 			}
 		case l.ch == '>':
 			if l.peekChar() == '=' {
 				l.addToken("GREATER_EQUAL", ">=", "")
-				fmt.Println("GREATER_EQUAL >= null")
+				l.log("GREATER_EQUAL >= null")
 				l.readChar()
 			} else {
 				l.addToken("GREATER", ">", "")
-				fmt.Println("GREATER > null")
+				l.log("GREATER > null")
 			}
 		case l.ch == '/':
 			if l.peekChar() == '/' {
 				l.skipComment()
 			} else {
 				l.addToken("SLASH", "/", "")
-				fmt.Println("SLASH / null")
+				l.log("SLASH / null")
 			}
 		case l.ch == '"':
 			l.handleStringLiteral()
@@ -159,7 +161,7 @@ func (l *Lexer) ScanTokens() {
 		}
 		l.readChar()
 	}
-	fmt.Println("EOF  null")
+	l.log("EOF  null")
 
 	if len(l.errors) > 0 {
 		os.Exit(65)
@@ -177,6 +179,13 @@ func (l *Lexer) addToken(tokenType, lexeme, literal string) {
 	l.tokens = append(l.tokens, token)
 }
 
+// log prints only if logging is enabled
+func (l *Lexer) log(message string) {
+	if l.logEnabled {
+		fmt.Println(message)
+	}
+}
+
 // handleIdentifier processes identifiers or reserved keywords
 func (l *Lexer) handleIdentifier() {
 	startPosition := l.position
@@ -188,10 +197,10 @@ func (l *Lexer) handleIdentifier() {
 	keyword, ok := RESERVED_WORDS[identifier]
 	if !ok {
 		l.addToken("IDENTIFIER", identifier, "")
-		fmt.Printf("IDENTIFIER %s null\n", identifier)
+		l.log(fmt.Sprintf("IDENTIFIER %s null", identifier))
 	} else {
 		l.addToken(keyword, identifier, "")
-		fmt.Printf("%s %s null\n", keyword, identifier)
+		l.log(fmt.Sprintf("%s %s null", keyword, identifier))
 	}
 }
 
@@ -203,7 +212,7 @@ func (l *Lexer) handleStringLiteral() {
 		if l.ch == '"' {
 			literal := l.source[startPosition+1 : l.position]
 			l.addToken("STRING", literal, literal)
-			fmt.Printf("STRING \"%s\" %s\n", literal, literal)
+			l.log(fmt.Sprintf("STRING \"%s\" %s", literal, literal))
 			return
 		} else if l.ch == 0 || l.ch == '\n' {
 			l.reportErrorUnterminatedString()
@@ -227,7 +236,7 @@ func (l *Lexer) handleNumberLiteral() {
 
 	literal := l.source[startPosition:l.position]
 	l.addToken("NUMBER", literal, formatAsFloat(literal))
-	fmt.Printf("NUMBER %s %s\n", literal, formatAsFloat(literal))
+	l.log(fmt.Sprintf("NUMBER %s %s", literal, formatAsFloat(literal)))
 	l.position--
 	l.nextPosition--
 }
@@ -281,6 +290,7 @@ func (s *Lexer) reportError(content byte) {
 	fmt.Fprintln(os.Stderr, errorMessage)
 	s.errors = append(s.errors, errorMessage)
 }
+
 
 // Helper function to format a number literal as a floating-point number
 func formatAsFloat(literal string) string {
