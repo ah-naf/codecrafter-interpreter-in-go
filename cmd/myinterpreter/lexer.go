@@ -6,6 +6,7 @@ import (
 	"unicode"
 )
 
+// Token structure to represent each token in the source code
 type Token struct {
 	Type    string
 	Lexeme  string
@@ -13,16 +14,18 @@ type Token struct {
 	Line    int
 }
 
+// Lexer structure to maintain the state of lexical analysis
 type Lexer struct {
-	source string
-	line   int
-	errors []string
-	position int
+	source      string
+	line        int
+	errors      []string
+	position    int
 	nextPosition int
-	ch byte
-	tokens []Token
+	ch          byte
+	tokens      []Token
 }
 
+// NewLexer initializes a new lexer for the given source code
 func NewLexer(source string) *Lexer {
 	l := &Lexer{
 		source: source,
@@ -34,53 +37,55 @@ func NewLexer(source string) *Lexer {
 	return l
 }
 
+// readChar reads the next character and updates position in the source
 func (l *Lexer) readChar() {
 	if l.nextPosition >= len(l.source) {
-        l.ch = 0
-    } else {
-        l.ch = l.source[l.nextPosition]
-    }
-    l.position = l.nextPosition
-    l.nextPosition++
+		l.ch = 0 // End of file
+	} else {
+		l.ch = l.source[l.nextPosition]
+	}
+	l.position = l.nextPosition
+	l.nextPosition++
 }
 
+// ScanTokens processes the source and generates tokens
 func (l *Lexer) ScanTokens() {
 	for l.ch != 0 {
 		switch {
 		case l.isDigit():
 			l.handleNumberLiteral()
-		case l.ch == LEFT_PAREN:
+		case l.ch == '(':
 			l.addToken("LEFT_PAREN", "(", "")
 			fmt.Println("LEFT_PAREN ( null")
-		case l.ch == RIGHT_PAREN:
+		case l.ch == ')':
 			l.addToken("RIGHT_PAREN", ")", "")
 			fmt.Println("RIGHT_PAREN ) null")
-		case l.ch == LEFT_BRACE:
+		case l.ch == '{':
 			l.addToken("LEFT_BRACE", "{", "")
 			fmt.Println("LEFT_BRACE { null")
-		case l.ch == RIGHT_BRACE:
+		case l.ch == '}':
 			l.addToken("RIGHT_BRACE", "}", "")
 			fmt.Println("RIGHT_BRACE } null")
-		case l.ch == STAR:
+		case l.ch == '*':
 			l.addToken("STAR", "*", "")
 			fmt.Println("STAR * null")
-		case l.ch == DOT:
+		case l.ch == '.':
 			l.addToken("DOT", ".", "")
 			fmt.Println("DOT . null")
-		case l.ch == COMMA:
+		case l.ch == ',':
 			l.addToken("COMMA", ",", "")
 			fmt.Println("COMMA , null")
-		case l.ch == PLUS:
+		case l.ch == '+':
 			l.addToken("PLUS", "+", "")
 			fmt.Println("PLUS + null")
-		case l.ch == MINUS:
+		case l.ch == '-':
 			l.addToken("MINUS", "-", "")
 			fmt.Println("MINUS - null")
-		case l.ch == SEMICOLON:
+		case l.ch == ';':
 			l.addToken("SEMICOLON", ";", "")
 			fmt.Println("SEMICOLON ; null")
-		case l.ch == EQUAL:
-			if l.peekChar() == EQUAL {
+		case l.ch == '=':
+			if l.peekChar() == '=' {
 				l.addToken("EQUAL_EQUAL", "==", "")
 				fmt.Println("EQUAL_EQUAL == null")
 				l.readChar()
@@ -88,8 +93,8 @@ func (l *Lexer) ScanTokens() {
 				l.addToken("EQUAL", "=", "")
 				fmt.Println("EQUAL = null")
 			}
-		case l.ch == BANG:
-			if l.peekChar() == EQUAL {
+		case l.ch == '!':
+			if l.peekChar() == '=' {
 				l.addToken("BANG_EQUAL", "!=", "")
 				fmt.Println("BANG_EQUAL != null")
 				l.readChar()
@@ -97,8 +102,8 @@ func (l *Lexer) ScanTokens() {
 				l.addToken("BANG", "!", "")
 				fmt.Println("BANG ! null")
 			}
-		case l.ch == LT:
-			if l.peekChar() == EQUAL {
+		case l.ch == '<':
+			if l.peekChar() == '=' {
 				l.addToken("LESS_EQUAL", "<=", "")
 				fmt.Println("LESS_EQUAL <= null")
 				l.readChar()
@@ -106,8 +111,8 @@ func (l *Lexer) ScanTokens() {
 				l.addToken("LESS", "<", "")
 				fmt.Println("LESS < null")
 			}
-		case l.ch == GT:
-			if l.peekChar() == EQUAL {
+		case l.ch == '>':
+			if l.peekChar() == '=' {
 				l.addToken("GREATER_EQUAL", ">=", "")
 				fmt.Println("GREATER_EQUAL >= null")
 				l.readChar()
@@ -115,9 +120,8 @@ func (l *Lexer) ScanTokens() {
 				l.addToken("GREATER", ">", "")
 				fmt.Println("GREATER > null")
 			}
-		case l.ch == SLASH:
-			if l.peekChar() == SLASH {
-				// It's a comment, skip until end of line
+		case l.ch == '/':
+			if l.peekChar() == '/' {
 				l.skipComment()
 			} else {
 				l.addToken("SLASH", "/", "")
@@ -148,7 +152,7 @@ func (l *Lexer) ScanTokens() {
 	}
 }
 
-
+// addToken creates a new token and appends it to the token list
 func (l *Lexer) addToken(tokenType, lexeme, literal string) {
 	token := Token{
 		Type:    tokenType,
@@ -159,123 +163,89 @@ func (l *Lexer) addToken(tokenType, lexeme, literal string) {
 	l.tokens = append(l.tokens, token)
 }
 
+// handleIdentifier processes identifiers or reserved keywords
 func (l *Lexer) handleIdentifier() {
 	startPosition := l.position
-	
 	for l.isAlpha() || l.isDigit() {
-        l.readChar()
-    }
+		l.readChar()
+	}
 
 	identifier := l.source[startPosition:l.position]
 	keyword, ok := RESERVED_WORDS[identifier]
-
 	if !ok {
-		token := Token{
-			Type:    "IDENTIFIER",
-			Lexeme:  identifier,
-			Literal: "",
-			Line:    l.line,
-		}
-		l.tokens = append(l.tokens, token)
+		l.addToken("IDENTIFIER", identifier, "")
 		fmt.Printf("IDENTIFIER %s null\n", identifier)
 	} else {
-		token := Token{
-			Type:    keyword,
-			Lexeme:  identifier,
-			Literal: "",
-			Line:    l.line,
-		}
-		l.tokens = append(l.tokens, token)
+		l.addToken(keyword, identifier, "")
 		fmt.Printf("%s %s null\n", keyword, identifier)
 	}
-	
 }
 
+// handleStringLiteral processes string literals
 func (l *Lexer) handleStringLiteral() {
 	startPosition := l.position
 	for {
 		l.readChar()
 		if l.ch == '"' {
-			// Found the closing quote
 			literal := l.source[startPosition+1 : l.position]
-			// TODO: Might have to update lexeme
-			token := Token{
-				Type: "STRING",
-				Lexeme: literal,
-				Literal: literal,
-				Line: l.line,
-			}
-			l.tokens = append(l.tokens, token)
+			l.addToken("STRING", literal, literal)
 			fmt.Printf("STRING \"%s\" %s\n", literal, literal)
 			return
-		} else if l.ch == 0 {
-			// End of file reached, unterminated string
+		} else if l.ch == 0 || l.ch == '\n' {
 			l.reportErrorUnterminatedString()
-			return
-		} else if l.ch == '\n' {
-			// Unterminated string on the current line
-			l.reportErrorUnterminatedString()
-			l.line++
 			return
 		}
 	}
 }
 
+// handleNumberLiteral processes numeric literals
 func (l *Lexer) handleNumberLiteral() {
 	startPosition := l.position
-
-	// Read the integer part
 	for l.isDigit() {
 		l.readChar()
 	}
-
-	// Check for fractional part
-	floatingPoint := false
 	if l.ch == '.' && l.isDigitAtNextPosition() {
-		l.readChar() // consume '.'
+		l.readChar()
 		for l.isDigit() {
 			l.readChar()
 		}
-		floatingPoint = true
 	}
 
 	literal := l.source[startPosition:l.position]
-	value := literal
-	if floatingPoint {
-		numZero := 0
-		for i := len(literal) - 1; i >= 0; i-- {
-			if literal[i] == '0' {
-                numZero++
-            } else {
-                break
-            }
-		}
-		// Remove trailing zeroes from the fractional part
-		if numZero > 0 {
-			value = value[:len(value)-numZero + 1]
-		}
-	}
-
-	token := Token{
-		Type: "NUMBER",
-		Lexeme: literal,
-		Literal: formatAsFloat(value),
-		Line: l.line,
-	}
-	l.tokens = append(l.tokens, token)
-	// Convert the value to a floating-point representation
-	fmt.Printf("NUMBER %s %s\n", literal, formatAsFloat(value))
+	l.addToken("NUMBER", literal, formatAsFloat(literal))
+	fmt.Printf("NUMBER %s %s\n", literal, formatAsFloat(literal))
 	l.position--
 	l.nextPosition--
 }
 
+// skipComment skips comments starting with '//'
+func (l *Lexer) skipComment() {
+	for l.ch != '\n' && l.ch != 0 {
+		l.readChar()
+	}
+	if l.ch == '\n' {
+		l.line++
+	}
+}
 
+// Helper functions
 func (l *Lexer) isDigit() bool {
 	return l.ch >= '0' && l.ch <= '9'
 }
 
 func (l *Lexer) isAlpha() bool {
-	return l.ch >= 'a' && l.ch <= 'z' || l.ch >= 'A' && l.ch <= 'Z' || l.ch == '_'
+	return unicode.IsLetter(rune(l.ch)) || l.ch == '_'
+}
+
+func (l *Lexer) isWhitespace() bool {
+	return l.ch == ' ' || l.ch == '\r' || l.ch == '\t' || l.ch == '\n'
+}
+
+func (l *Lexer) peekChar() byte {
+	if l.nextPosition >= len(l.source) {
+		return 0
+	}
+	return l.source[l.nextPosition]
 }
 
 func (l *Lexer) isDigitAtNextPosition() bool {
@@ -285,26 +255,7 @@ func (l *Lexer) isDigitAtNextPosition() bool {
 	return unicode.IsDigit(rune(l.source[l.nextPosition]))
 }
 
-// Helper function to format a number literal as a floating-point number
-func formatAsFloat(literal string) string {
-	// Ensure the literal has a decimal point
-	if !containsDecimalPoint(literal) {
-		return literal + ".0"
-	}
-	return literal
-}
-
-// Helper function to check if a literal contains a decimal point
-func containsDecimalPoint(literal string) bool {
-	for i := 0; i < len(literal); i++ {
-		if literal[i] == '.' {
-			return true
-		}
-	}
-	return false
-}
-
-
+// Error handling
 func (l *Lexer) reportErrorUnterminatedString() {
 	errorMessage := fmt.Sprintf("[line %d] Error: Unterminated string.", l.line)
 	fmt.Fprintln(os.Stderr, errorMessage)
@@ -317,24 +268,49 @@ func (s *Lexer) reportError(content byte) {
 	s.errors = append(s.errors, errorMessage)
 }
 
-func (l *Lexer) isWhitespace() bool {
-	return l.ch == ' ' || l.ch == '\r' || l.ch == '\t' || l.ch == '\n'
+// Helper function to format a number literal as a floating-point number
+func formatAsFloat(literal string) string {
+	if !containsDecimalPoint(literal) {
+		return literal + ".0" // Add ".0" for integers
+	}
+	// If there's a decimal point, trim unnecessary trailing zeros but keep at least one digit after the decimal
+	return trimTrailingZeros(literal)
 }
 
-func (l *Lexer) skipComment() {
-	for l.ch != '\n' && l.ch != 0 {
-		l.readChar()
+// Helper function to check if a literal contains a decimal point
+func containsDecimalPoint(literal string) bool {
+	for _, ch := range literal {
+		if ch == '.' {
+			return true
+		}
 	}
-	
-	if l.ch == '\n' {
-		l.line++
-	}
+	return false
 }
 
-func (l *Lexer) peekChar() byte {
-	if l.nextPosition >= len(l.source) {
-		return 0
-	} else {
-		return l.source[l.nextPosition]
+// Helper function to trim trailing zeros from the fractional part
+func trimTrailingZeros(literal string) string {
+	decimalPos := -1
+	for i := range literal {
+		if literal[i] == '.' {
+			decimalPos = i
+			break
+		}
 	}
+
+	if decimalPos == -1 {
+		return literal // No decimal point, return the literal as is
+	}
+
+	// Start from the end of the string and remove trailing zeros
+	endPos := len(literal)
+	for endPos > decimalPos+1 && literal[endPos-1] == '0' {
+		endPos--
+	}
+
+	// Ensure there's at least one digit after the decimal
+	if endPos == decimalPos+1 {
+		return literal[:endPos] + "0"
+	}
+
+	return literal[:endPos]
 }
