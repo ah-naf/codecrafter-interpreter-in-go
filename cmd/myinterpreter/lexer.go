@@ -6,6 +6,13 @@ import (
 	"unicode"
 )
 
+type Token struct {
+	Type    string
+	Lexeme  string
+	Literal string
+	Line    int
+}
+
 type Lexer struct {
 	source string
 	line   int
@@ -13,6 +20,7 @@ type Lexer struct {
 	position int
 	nextPosition int
 	ch byte
+	tokens []Token
 }
 
 func NewLexer(source string) *Lexer {
@@ -20,6 +28,7 @@ func NewLexer(source string) *Lexer {
 		source: source,
 		line:   1,
 		errors: []string{},
+		tokens: []Token{},
 	}
 	l.readChar()
 	return l
@@ -41,51 +50,69 @@ func (l *Lexer) ScanTokens() {
 		case l.isDigit():
 			l.handleNumberLiteral()
 		case l.ch == LEFT_PAREN:
+			l.addToken("LEFT_PAREN", "(", "")
 			fmt.Println("LEFT_PAREN ( null")
 		case l.ch == RIGHT_PAREN:
+			l.addToken("RIGHT_PAREN", ")", "")
 			fmt.Println("RIGHT_PAREN ) null")
 		case l.ch == LEFT_BRACE:
+			l.addToken("LEFT_BRACE", "{", "")
 			fmt.Println("LEFT_BRACE { null")
 		case l.ch == RIGHT_BRACE:
+			l.addToken("RIGHT_BRACE", "}", "")
 			fmt.Println("RIGHT_BRACE } null")
 		case l.ch == STAR:
+			l.addToken("STAR", "*", "")
 			fmt.Println("STAR * null")
 		case l.ch == DOT:
+			l.addToken("DOT", ".", "")
 			fmt.Println("DOT . null")
 		case l.ch == COMMA:
+			l.addToken("COMMA", ",", "")
 			fmt.Println("COMMA , null")
 		case l.ch == PLUS:
+			l.addToken("PLUS", "+", "")
 			fmt.Println("PLUS + null")
 		case l.ch == MINUS:
+			l.addToken("MINUS", "-", "")
 			fmt.Println("MINUS - null")
 		case l.ch == SEMICOLON:
+			l.addToken("SEMICOLON", ";", "")
 			fmt.Println("SEMICOLON ; null")
 		case l.ch == EQUAL:
 			if l.peekChar() == EQUAL {
+				l.addToken("EQUAL_EQUAL", "==", "")
 				fmt.Println("EQUAL_EQUAL == null")
 				l.readChar()
 			} else {
+				l.addToken("EQUAL", "=", "")
 				fmt.Println("EQUAL = null")
 			}
 		case l.ch == BANG:
 			if l.peekChar() == EQUAL {
+				l.addToken("BANG_EQUAL", "!=", "")
 				fmt.Println("BANG_EQUAL != null")
 				l.readChar()
 			} else {
+				l.addToken("BANG", "!", "")
 				fmt.Println("BANG ! null")
 			}
 		case l.ch == LT:
 			if l.peekChar() == EQUAL {
+				l.addToken("LESS_EQUAL", "<=", "")
 				fmt.Println("LESS_EQUAL <= null")
 				l.readChar()
 			} else {
+				l.addToken("LESS", "<", "")
 				fmt.Println("LESS < null")
 			}
 		case l.ch == GT:
 			if l.peekChar() == EQUAL {
+				l.addToken("GREATER_EQUAL", ">=", "")
 				fmt.Println("GREATER_EQUAL >= null")
 				l.readChar()
 			} else {
+				l.addToken("GREATER", ">", "")
 				fmt.Println("GREATER > null")
 			}
 		case l.ch == SLASH:
@@ -93,6 +120,7 @@ func (l *Lexer) ScanTokens() {
 				// It's a comment, skip until end of line
 				l.skipComment()
 			} else {
+				l.addToken("SLASH", "/", "")
 				fmt.Println("SLASH / null")
 			}
 		case l.ch == '"':
@@ -100,7 +128,7 @@ func (l *Lexer) ScanTokens() {
 		default:
 			if l.isAlpha() {
 				l.handleIdentifier()
-				continue;
+				continue
 			}
 			if l.isWhitespace() {
 				if l.ch == '\n' {
@@ -120,6 +148,17 @@ func (l *Lexer) ScanTokens() {
 	}
 }
 
+
+func (l *Lexer) addToken(tokenType, lexeme, literal string) {
+	token := Token{
+		Type:    tokenType,
+		Lexeme:  lexeme,
+		Literal: literal,
+		Line:    l.line,
+	}
+	l.tokens = append(l.tokens, token)
+}
+
 func (l *Lexer) handleIdentifier() {
 	startPosition := l.position
 	
@@ -131,8 +170,22 @@ func (l *Lexer) handleIdentifier() {
 	keyword, ok := RESERVED_WORDS[identifier]
 
 	if !ok {
+		token := Token{
+			Type:    "IDENTIFIER",
+			Lexeme:  identifier,
+			Literal: "",
+			Line:    l.line,
+		}
+		l.tokens = append(l.tokens, token)
 		fmt.Printf("IDENTIFIER %s null\n", identifier)
 	} else {
+		token := Token{
+			Type:    keyword,
+			Lexeme:  identifier,
+			Literal: "",
+			Line:    l.line,
+		}
+		l.tokens = append(l.tokens, token)
 		fmt.Printf("%s %s null\n", keyword, identifier)
 	}
 	
@@ -145,6 +198,14 @@ func (l *Lexer) handleStringLiteral() {
 		if l.ch == '"' {
 			// Found the closing quote
 			literal := l.source[startPosition+1 : l.position]
+			// TODO: Might have to update lexeme
+			token := Token{
+				Type: "STRING",
+				Lexeme: literal,
+				Literal: literal,
+				Line: l.line,
+			}
+			l.tokens = append(l.tokens, token)
 			fmt.Printf("STRING \"%s\" %s\n", literal, literal)
 			return
 		} else if l.ch == 0 {
@@ -195,6 +256,13 @@ func (l *Lexer) handleNumberLiteral() {
 		}
 	}
 
+	token := Token{
+		Type: "NUMBER",
+		Lexeme: literal,
+		Literal: formatAsFloat(value),
+		Line: l.line,
+	}
+	l.tokens = append(l.tokens, token)
 	// Convert the value to a floating-point representation
 	fmt.Printf("NUMBER %s %s\n", literal, formatAsFloat(value))
 	l.position--
