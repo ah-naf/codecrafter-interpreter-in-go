@@ -6,6 +6,20 @@ import (
 	"unicode"
 )
 
+/*
+Token:
+- Type: The category of the token, such as keyword, operator, or identifier.
+- Lexeme: The exact string or value from the source code that the token represents.
+- Literal: The value the token represents, especially for literals (e.g., numbers, strings).
+
+Example:
+For the source code `var x = 10`:
+- Token 1: {Type: "VAR", Lexeme: "var", Literal: "", Line: 1}
+- Token 2: {Type: "IDENTIFIER", Lexeme: "x", Literal: "", Line: 1}
+- Token 3: {Type: "EQUAL", Lexeme: "=", Literal: "", Line: 1}
+- Token 4: {Type: "NUMBER", Lexeme: "10", Literal: "10", Line: 1}
+*/
+
 // Token structure to represent each token in the source code
 type Token struct {
 	Type    string
