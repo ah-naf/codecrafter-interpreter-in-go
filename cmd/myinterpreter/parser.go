@@ -104,7 +104,7 @@ func (p *Parser) parsePrimary() Expr {
 		p.consume("RIGHT_PAREN", "Expect ')' after expression.")
 		return &Grouping{Expression: expr} // Directly return the expression, not a group node
 	default:
-		p.error("Expected literal or '('")
+		p.error("Expected expression.")
 		return nil
 	}
 }
@@ -144,5 +144,5 @@ func (p *Parser) isAtEnd() bool {
 func (p *Parser) error(msg string) {
 	token := p.lexer.tokens[p.pos]
 	fmt.Fprintf(os.Stderr, "[line %d] Error at '%s': %s\n", token.Line, token.Lexeme, msg)
-	os.Exit(1)
+	os.Exit(65)
 }
