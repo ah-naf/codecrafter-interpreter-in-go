@@ -36,6 +36,13 @@ func main() {
 		parser := NewParser(scanner)
 		ast := parser.Parse()
 		fmt.Println(ast.String()) // Print the AST
+	case "evaluate":
+		scanner := NewLexer(string(rawFileContent), logEnabled)
+		scanner.ScanTokens() // Tokenize first
+		parser := NewParser(scanner)
+		ast := parser.Parse()
+		result := ast.Eval() // Evaluate the AST
+		fmt.Println(result)  // Print the evaluated result
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown command: %s\n", command)
 		os.Exit(1)
