@@ -31,6 +31,9 @@ func (p *Parser) Parse() Expr {
 		// Convert the token literal (string) to a float64 value
 		value := p.previous().Literal
 		return &Literal{Value: value} // Return number literal as float64
+	} else if p.match("STRING") {
+		value := p.previous().Literal
+		return &Literal{Value: value}
 	}
 
 	// If it's an unexpected token, we report an error
