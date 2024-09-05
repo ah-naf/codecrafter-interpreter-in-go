@@ -20,28 +20,42 @@ func NewParser(lexer *Lexer) *Parser {
 
 // Parse starts parsing and returns the resulting AST
 func (p *Parser) Parse() Expr {
-	return p.parseMultiplication()
+	return p.parseComparison()
 }
 
-// parseMultiplication handles * and / operators with their precedence
-func (p *Parser) parseMultiplication() Expr {
-	expr := p.parseAdditionSubstraction() // Start by parsing a unary or primary expression
+// parseComparison handles >, <, >=, <= operators
+func (p *Parser) parseComparison() Expr {
+	expr := p.parseAdditionSubstraction() // Start by parsing addition and subtraction
 
-	for p.match("STAR", "SLASH") { // Look for * or / operators
+	for p.match("GREATER", "GREATER_EQUAL", "LESS", "LESS_EQUAL") { // Look for comparison operators
 		operator := p.previous()
-		right := p.parseAdditionSubstraction() // Parse the right-hand operand (which could be a unary expression)
+		right := p.parseAdditionSubstraction() // Parse the right-hand operand
 		expr = &Binary{Left: expr, Operator: operator, Right: right}
 	}
 
 	return expr
 }
 
+// parseAdditionSubstraction handles + and - operators
 func (p *Parser) parseAdditionSubstraction() Expr {
-	expr := p.parseUnary()
+	expr := p.parseMultiplication()
 
 	for p.match("PLUS", "MINUS") {
 		operator := p.previous()
-		right := p.parseUnary()
+		right := p.parseMultiplication()
+		expr = &Binary{Left: expr, Operator: operator, Right: right}
+	}
+
+	return expr
+}
+
+// parseMultiplication handles * and / operators with their precedence
+func (p *Parser) parseMultiplication() Expr {
+	expr := p.parseUnary() // Start by parsing unary operators
+
+	for p.match("STAR", "SLASH") { // Look for * or / operators
+		operator := p.previous()
+		right := p.parseUnary() // Parse the right-hand operand (which could be a unary expression)
 		expr = &Binary{Left: expr, Operator: operator, Right: right}
 	}
 
@@ -74,9 +88,9 @@ func (p *Parser) parsePrimary() Expr {
 	case p.match("STRING"):
 		return &Literal{Value: p.previous().Literal}
 	case p.match("LEFT_PAREN"):
-		expr := p.Parse() // Recursively parse the inner expression
+		expr := p.parseComparison() // Recursively parse the inner expression inside parentheses
 		p.consume("RIGHT_PAREN", "Expect ')' after expression.")
-		return &Grouping{Expression: expr}
+		return &Grouping{Expression: expr} // Directly return the expression, not a group node
 	default:
 		p.error("Expected literal or '('")
 		return nil
