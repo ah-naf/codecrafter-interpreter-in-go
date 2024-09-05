@@ -1,4 +1,3 @@
-// parser.go
 package main
 
 import (
@@ -14,57 +13,79 @@ type Parser struct {
 // NewParser initializes a new parser with the lexer input
 func NewParser(lexer *Lexer) *Parser {
 	return &Parser{
-		lexer: lexer, // Use the lexer directly
+		lexer: lexer,
 		pos:   0,
 	}
 }
 
 // Parse starts parsing and returns the resulting AST
 func (p *Parser) Parse() Expr {
-	if p.match("TRUE") {
-		return &Literal{Value: true}
-	} else if p.match("FALSE") {
-		return &Literal{Value: false}
-	} else if p.match("NIL") {
-		return &Literal{Value: nil}
-	} else if p.match("NUMBER") {
-		// Convert the token literal (string) to a float64 value
-		value := p.previous().Literal
-		return &Literal{Value: value} // Return number literal as float64
-	} else if p.match("STRING") {
-		value := p.previous().Literal
-		return &Literal{Value: value}
-	} else if p.match("LEFT_PAREN") {
-		expr := p.Parse() // Recursively parse the inner expression
-		p.consume("RIGHT_PAREN", "Expect ')' after expression.")
-		return &Grouping{Expression: expr} // Return the grouping expression
-	} else if p.match("BANG") { // Logical NOT operator
-		operator := p.previous()
-		right := p.Parse() // Recursively parse the right-hand expression
-		return &Unary{Operator: operator, Right: right}
-	} else if p.match("MINUS") { // Negation operator
-		operator := p.previous()
-		right := p.Parse() // Recursively parse the right-hand expression
-		return &Unary{Operator: operator, Right: right}
-	}
-
-	// If it's an unexpected token, we report an error
-	p.error("Expected literal")
-	return nil
+	return p.parseMultiplication()
 }
 
-// match checks if the current token matches the expected type
-func (p *Parser) match(expectedType string) bool {
-	if p.pos >= len(p.lexer.tokens) { // Directly access lexer.tokens
+// parseMultiplication handles * and / operators with their precedence
+func (p *Parser) parseMultiplication() Expr {
+	expr := p.parseUnary() // Start by parsing a unary or primary expression
+
+	for p.match("STAR", "SLASH") { // Look for * or / operators
+		operator := p.previous()
+		right := p.parseUnary() // Parse the right-hand operand (which could be a unary expression)
+		expr = &Binary{Left: expr, Operator: operator, Right: right}
+	}
+
+	return expr
+}
+
+// parseUnary handles unary operators (e.g., -23, !true) or forwards to primary expressions
+func (p *Parser) parseUnary() Expr {
+	if p.match("BANG", "MINUS") { // Check for the unary operators
+		operator := p.previous()
+		right := p.parseUnary() // Recursively parse the right-hand operand
+		return &Unary{Operator: operator, Right: right}
+	}
+
+	// If it's not a unary expression, parse a primary expression
+	return p.parsePrimary()
+}
+
+// parsePrimary handles numbers, strings, booleans, and parentheses
+func (p *Parser) parsePrimary() Expr {
+	switch {
+	case p.match("TRUE"):
+		return &Literal{Value: true}
+	case p.match("FALSE"):
+		return &Literal{Value: false}
+	case p.match("NIL"):
+		return &Literal{Value: nil}
+	case p.match("NUMBER"):
+		return &Literal{Value: p.previous().Literal}
+	case p.match("STRING"):
+		return &Literal{Value: p.previous().Literal}
+	case p.match("LEFT_PAREN"):
+		expr := p.Parse() // Recursively parse the inner expression
+		p.consume("RIGHT_PAREN", "Expect ')' after expression.")
+		return &Grouping{Expression: expr}
+	default:
+		p.error("Expected literal or '('")
+		return nil
+	}
+}
+
+// match checks if the current token matches one of the expected types
+func (p *Parser) match(types ...string) bool {
+	if p.isAtEnd() {
 		return false
 	}
-	if p.lexer.tokens[p.pos].Type == expectedType {
-		p.pos++
-		return true
+	for _, t := range types {
+		if p.lexer.tokens[p.pos].Type == t {
+			p.pos++
+			return true
+		}
 	}
 	return false
 }
 
+// previous returns the last matched token
 func (p *Parser) previous() Token {
 	return p.lexer.tokens[p.pos-1]
 }
@@ -76,9 +97,14 @@ func (p *Parser) consume(expectedType, errorMessage string) {
 	}
 }
 
+// isAtEnd checks if the parser has reached the end of the token list
+func (p *Parser) isAtEnd() bool {
+	return p.pos >= len(p.lexer.tokens)
+}
+
 // error reports a parsing error
 func (p *Parser) error(msg string) {
-	token := p.lexer.tokens[p.pos] // Directly access lexer.tokens
+	token := p.lexer.tokens[p.pos]
 	fmt.Fprintf(os.Stderr, "[line %d] Error at '%s': %s\n", token.Line, token.Lexeme, msg)
 	os.Exit(1)
 }
