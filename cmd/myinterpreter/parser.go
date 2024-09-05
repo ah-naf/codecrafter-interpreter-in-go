@@ -20,7 +20,19 @@ func NewParser(lexer *Lexer) *Parser {
 
 // Parse starts parsing and returns the resulting AST
 func (p *Parser) Parse() Expr {
-	return p.parseComparison()
+	return p.parseEquality()
+}
+
+func(p *Parser) parseEquality() Expr {
+	expr := p.parseComparison()
+
+	for p.match("EQUAL_EQUAL", "BANG_EQUAL") {
+		operator := p.previous()
+		right := p.parseComparison()
+		expr = &Binary{Left: expr, Operator: operator, Right: right}
+	}
+
+	return expr
 }
 
 // parseComparison handles >, <, >=, <= operators
@@ -88,7 +100,7 @@ func (p *Parser) parsePrimary() Expr {
 	case p.match("STRING"):
 		return &Literal{Value: p.previous().Literal}
 	case p.match("LEFT_PAREN"):
-		expr := p.parseComparison() // Recursively parse the inner expression inside parentheses
+		expr := p.parseEquality() // Recursively parse the inner expression inside parentheses
 		p.consume("RIGHT_PAREN", "Expect ')' after expression.")
 		return &Grouping{Expression: expr} // Directly return the expression, not a group node
 	default:
