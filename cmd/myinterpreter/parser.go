@@ -25,11 +25,23 @@ func (p *Parser) Parse() Expr {
 
 // parseMultiplication handles * and / operators with their precedence
 func (p *Parser) parseMultiplication() Expr {
-	expr := p.parseUnary() // Start by parsing a unary or primary expression
+	expr := p.parseAdditionSubstraction() // Start by parsing a unary or primary expression
 
 	for p.match("STAR", "SLASH") { // Look for * or / operators
 		operator := p.previous()
-		right := p.parseUnary() // Parse the right-hand operand (which could be a unary expression)
+		right := p.parseAdditionSubstraction() // Parse the right-hand operand (which could be a unary expression)
+		expr = &Binary{Left: expr, Operator: operator, Right: right}
+	}
+
+	return expr
+}
+
+func (p *Parser) parseAdditionSubstraction() Expr {
+	expr := p.parseUnary()
+
+	for p.match("PLUS", "MINUS") {
+		operator := p.previous()
+		right := p.parseUnary()
 		expr = &Binary{Left: expr, Operator: operator, Right: right}
 	}
 
