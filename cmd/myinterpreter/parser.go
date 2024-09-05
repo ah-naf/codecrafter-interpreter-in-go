@@ -7,17 +7,15 @@ import (
 )
 
 type Parser struct {
-	lexer  *Lexer
-	tokens []Token
-	pos    int
+	lexer *Lexer
+	pos   int
 }
 
 // NewParser initializes a new parser with the lexer input
 func NewParser(lexer *Lexer) *Parser {
 	return &Parser{
-		lexer:  lexer,
-		tokens: lexer.tokens,
-		pos:    0,
+		lexer: lexer, // Use the lexer directly
+		pos:   0,
 	}
 }
 
@@ -38,10 +36,10 @@ func (p *Parser) Parse() Expr {
 
 // match checks if the current token matches the expected type
 func (p *Parser) match(expectedType string) bool {
-	if p.pos >= len(p.tokens) {
+	if p.pos >= len(p.lexer.tokens) { // Directly access lexer.tokens
 		return false
 	}
-	if p.tokens[p.pos].Type == expectedType {
+	if p.lexer.tokens[p.pos].Type == expectedType {
 		p.pos++
 		return true
 	}
@@ -50,7 +48,7 @@ func (p *Parser) match(expectedType string) bool {
 
 // error reports a parsing error
 func (p *Parser) error(msg string) {
-	token := p.tokens[p.pos]
+	token := p.lexer.tokens[p.pos] // Directly access lexer.tokens
 	fmt.Fprintf(os.Stderr, "[line %d] Error at '%s': %s\n", token.Line, token.Lexeme, msg)
 	os.Exit(1)
 }
