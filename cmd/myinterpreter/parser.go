@@ -27,6 +27,10 @@ func (p *Parser) Parse() Expr {
 		return &Literal{Value: false}
 	} else if p.match("NIL") {
 		return &Literal{Value: nil}
+	} else if p.match("NUMBER") {
+		// Convert the token literal (string) to a float64 value
+		value := p.previous().Literal
+		return &Literal{Value: value} // Return number literal as float64
 	}
 
 	// If it's an unexpected token, we report an error
@@ -44,6 +48,10 @@ func (p *Parser) match(expectedType string) bool {
 		return true
 	}
 	return false
+}
+
+func (p *Parser) previous() Token {
+	return p.lexer.tokens[p.pos-1]
 }
 
 // error reports a parsing error
