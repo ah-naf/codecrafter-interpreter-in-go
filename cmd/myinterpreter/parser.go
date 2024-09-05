@@ -38,6 +38,14 @@ func (p *Parser) Parse() Expr {
 		expr := p.Parse() // Recursively parse the inner expression
 		p.consume("RIGHT_PAREN", "Expect ')' after expression.")
 		return &Grouping{Expression: expr} // Return the grouping expression
+	} else if p.match("BANG") { // Logical NOT operator
+		operator := p.previous()
+		right := p.Parse() // Recursively parse the right-hand expression
+		return &Unary{Operator: operator, Right: right}
+	} else if p.match("MINUS") { // Negation operator
+		operator := p.previous()
+		right := p.Parse() // Recursively parse the right-hand expression
+		return &Unary{Operator: operator, Right: right}
 	}
 
 	// If it's an unexpected token, we report an error

@@ -29,3 +29,12 @@ func (l *Literal) String() string {
 	
 	return fmt.Sprintf("%v", l.Value)
 }
+
+type Unary struct {
+	Operator Token
+	Right    Expr
+}
+
+func (u *Unary) String() string {
+	return fmt.Sprintf("(%s %s)", u.Operator.Lexeme, u.Right.String())
+}
