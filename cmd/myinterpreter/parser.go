@@ -34,6 +34,10 @@ func (p *Parser) Parse() Expr {
 	} else if p.match("STRING") {
 		value := p.previous().Literal
 		return &Literal{Value: value}
+	} else if p.match("LEFT_PAREN") {
+		expr := p.Parse() // Recursively parse the inner expression
+		p.consume("RIGHT_PAREN", "Expect ')' after expression.")
+		return &Grouping{Expression: expr} // Return the grouping expression
 	}
 
 	// If it's an unexpected token, we report an error
@@ -55,6 +59,13 @@ func (p *Parser) match(expectedType string) bool {
 
 func (p *Parser) previous() Token {
 	return p.lexer.tokens[p.pos-1]
+}
+
+// consume checks for a specific token and advances, or throws an error if it doesn't match
+func (p *Parser) consume(expectedType, errorMessage string) {
+	if !p.match(expectedType) {
+		p.error(errorMessage)
+	}
 }
 
 // error reports a parsing error

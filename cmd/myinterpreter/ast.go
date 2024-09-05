@@ -11,6 +11,15 @@ type Literal struct {
 	Value interface{}
 }
 
+type Grouping struct {
+	Expression Expr
+}
+
+func (g *Grouping) String() string {
+	// fmt.Println(g.Expression)
+	return fmt.Sprintf("(group %s)", g.Expression.String())
+}
+
 // String method converts the literal value to its string representation
 func (l *Literal) String() string {
 	// Special case for nil
