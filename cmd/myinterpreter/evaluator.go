@@ -55,13 +55,13 @@ func (u *Unary) Eval() interface{} {
 			// Use the ConvertStringToFloat function to handle string conversion and error reporting
 			value, err := ConvertStringToFloat(num, u.Line)
 			if err != nil {
-				fmt.Fprintln(os.Stderr, err)
-				return nil
+				fmt.Fprintf(os.Stderr, "Operand must be a number.\n[line %d]\n", u.Line)
+				os.Exit(70)
 			}
 			return -value // Negate the converted float64 number
 		default:
-			fmt.Fprintf(os.Stderr, "[line %d] Error: Operand must be a number\n", u.Line)
-			return nil
+			fmt.Fprintf(os.Stderr, "Operand must be a number.\n[line %d]\n", u.Line)
+			os.Exit(70)
 		}
 	}
 
