@@ -81,7 +81,7 @@ func (b *Binary) Eval() interface{} {
 
 // Helper function to check truthiness (used in logical NOT)
 func isTruthy(value interface{}) bool {
-	if value == nil {
+	if value == nil || value == "nil" {
 		return false
 	}
 	if boolean, ok := value.(bool); ok {
