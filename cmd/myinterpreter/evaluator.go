@@ -91,7 +91,8 @@ func (b *Binary) Eval() interface{} {
 		}
 
 		// Raise an error for incompatible types
-		raiseBinaryTypeError(b.Line, leftVal, rightVal, "+")
+		fmt.Fprintf(os.Stderr, "Operands must be two numbers or two strings.\n[line %d]", b.Line)
+		os.Exit(70)
 	case MINUS: // Handle subtraction
 		return handleBinaryNumberOperation(leftVal, rightVal, "-", b.Line)
 	case STAR: // Handle multiplication
