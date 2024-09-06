@@ -72,7 +72,7 @@ func (u *Unary) Eval() interface{} {
 func (b *Binary) Eval() interface{} {
 	leftVal := b.Left.Eval()
 	rightVal := b.Right.Eval()
-
+	
 	switch b.Operator.Lexeme {
 	case PLUS: // Handle addition
 		leftNum, leftIsNum := toNumber(leftVal)
@@ -111,6 +111,64 @@ func (b *Binary) Eval() interface{} {
 
 		// Raise an error for incompatible types
 		raiseBinaryTypeError(b.Line, leftVal, rightVal, "/")
+	case GT:
+		leftNum, leftIsNum := toNumber(leftVal)
+		rightNum, rightIsNum := toNumber(rightVal)
+
+		if(leftIsNum && rightIsNum) {
+			return leftNum > rightNum
+		}
+
+		raiseBinaryTypeError(b.Line, leftVal, rightVal, GT)
+	case LT:
+		leftNum, leftIsNum := toNumber(leftVal)
+		rightNum, rightIsNum := toNumber(rightVal)
+
+		if(leftIsNum && rightIsNum) {
+			return leftNum < rightNum
+		}
+
+		raiseBinaryTypeError(b.Line, leftVal, rightVal, LT)
+	case GREATER_EQUAL:
+		leftNum, leftIsNum := toNumber(leftVal)
+		rightNum, rightIsNum := toNumber(rightVal)
+
+		if(leftIsNum && rightIsNum) {
+			return leftNum >= rightNum
+		}
+
+		raiseBinaryTypeError(b.Line, leftVal, rightVal, GREATER_EQUAL)
+	case LESS_EQUAL:
+		leftNum, leftIsNum := toNumber(leftVal)
+		rightNum, rightIsNum := toNumber(rightVal)
+
+		if(leftIsNum && rightIsNum) {
+			return leftNum <= rightNum
+		}
+
+		raiseBinaryTypeError(b.Line, leftVal, rightVal, LESS_EQUAL)
+	case BANG_EQUAL:
+		leftNum, leftIsNum := toNumber(leftVal)
+		rightNum, rightIsNum := toNumber(rightVal)
+
+		if(leftIsNum && rightIsNum) {
+			return leftNum != rightNum
+		} else if !leftIsNum && !rightIsNum {
+			return leftVal != rightVal
+		}
+
+		raiseBinaryTypeError(b.Line, leftVal, rightVal, BANG_EQUAL)
+	case EQUAL_EQUAL:
+		leftNum, leftIsNum := toNumber(leftVal)
+		rightNum, rightIsNum := toNumber(rightVal)
+
+		if(leftIsNum && rightIsNum) {
+			return leftNum == rightNum
+		} else if !leftIsNum && !rightIsNum {
+			return leftVal == rightVal
+		}
+
+		raiseBinaryTypeError(b.Line, leftVal, rightVal, EQUAL_EQUAL)
 	}
 
 	return nil

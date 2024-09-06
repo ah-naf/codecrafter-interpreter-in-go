@@ -16,6 +16,10 @@ const (
 	LT          = "<"
 	GT          = ">"
 	SLASH       = "/"
+	GREATER_EQUAL = ">="
+	LESS_EQUAL = "<="
+	BANG_EQUAL = "!="
+	EQUAL_EQUAL = "=="
 )
 
 var RESERVED_WORDS = map[string]string {
