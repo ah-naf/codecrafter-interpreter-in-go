@@ -42,7 +42,7 @@ func main() {
 		parser := NewParser(scanner)
 		ast := parser.Parse()
 		result := ast.Eval() // Evaluate the AST
-		// fmt.Println(ast.String())
+		// fmt.Printf("%#v", ast)
 		fmt.Println(result)  // Print the evaluated result
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown command: %s\n", command)

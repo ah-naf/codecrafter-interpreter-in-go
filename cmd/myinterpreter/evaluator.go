@@ -17,7 +17,6 @@ func (l *Literal) Eval() interface{} {
 	if l.Value == nil {
 		return "nil"
 	}
-
 	// If it's a number string, convert it
 	if num, ok := l.Value.(string); ok && isNumber(num) {
 		value, err := ConvertStringToFloat(num, 0) // 0 for line number as it's a literal
@@ -69,13 +68,68 @@ func (u *Unary) Eval() interface{} {
 
 // Eval method for Binary expressions (for future operators)
 func (b *Binary) Eval() interface{} {
-	// leftVal := b.Left.Eval()
-	// rightVal := b.Right.Eval()
+	leftVal := b.Left.Eval()
+	rightVal := b.Right.Eval()
 
-	// switch b.Operator.Type {
-	// // Add binary operator cases like +, -, *, /, etc., if needed
-	// }
+	switch b.Operator.Lexeme {
+	case PLUS: // Handle addition
+		leftNum, leftIsNum := toNumber(leftVal)
+		rightNum, rightIsNum := toNumber(rightVal)
 
+		// Handle addition of numbers
+		if leftIsNum && rightIsNum {
+			return leftNum + rightNum
+		}
+
+		// Handle string concatenation
+		if leftStr, ok := leftVal.(string); ok {
+			if rightStr, ok := rightVal.(string); ok {
+				return leftStr + rightStr // Concatenate two strings
+			}
+		}
+
+		// Raise an error for incompatible types
+		raiseBinaryTypeError(b.Line, leftVal, rightVal, "+")
+	case MINUS: // Handle subtraction
+		return handleBinaryNumberOperation(leftVal, rightVal, "-", b.Line)
+	case STAR: // Handle multiplication
+		return handleBinaryNumberOperation(leftVal, rightVal, "*", b.Line)
+	case SLASH: // Handle division
+		leftNum, leftIsNum := toNumber(leftVal)
+		rightNum, rightIsNum := toNumber(rightVal)
+
+		if leftIsNum && rightIsNum {
+			// Check for division by zero
+			if rightNum == 0 {
+				fmt.Fprintf(os.Stderr, "[line %d] Error: Cannot divide by zero\n", b.Line)
+				os.Exit(1)
+			}
+			return leftNum / rightNum
+		}
+
+		// Raise an error for incompatible types
+		raiseBinaryTypeError(b.Line, leftVal, rightVal, "/")
+	}
+
+	return nil
+}
+
+// Helper function to handle number operations (+, -, *, /) for binary expressions
+func handleBinaryNumberOperation(leftVal, rightVal interface{}, operator string, line int) interface{} {
+	leftNum, leftIsNum := toNumber(leftVal)
+	rightNum, rightIsNum := toNumber(rightVal)
+
+	if leftIsNum && rightIsNum {
+		switch operator {
+		case "-":
+			return leftNum - rightNum
+		case "*":
+			return leftNum * rightNum
+		}
+	}
+
+	// Raise an error for incompatible types
+	raiseBinaryTypeError(line, leftVal, rightVal, operator)
 	return nil
 }
 
@@ -104,4 +158,24 @@ func ConvertStringToFloat(input string, line int) (float64, error) {
 		return 0, fmt.Errorf("[line %d] Error: Invalid number format '%s'", line, input)
 	}
 	return value, nil
+}
+
+// Helper function to convert interface{} to float64 for number operations
+// Returns a float64 and a boolean indicating if the conversion was successful.
+func toNumber(value interface{}) (float64, bool) {
+	switch v := value.(type) {
+	case int:
+		return float64(v), true
+	case float64:
+		return v, true
+	default:
+		return 0, false
+	}
+}
+
+
+// Helper function to raise a type error for binary operations
+func raiseBinaryTypeError(line int, leftVal, rightVal interface{}, operator string) {
+	fmt.Fprintf(os.Stderr, "[line %d] Error: Cannot apply '%s' to %T and %T\n", line, operator, leftVal, rightVal)
+	os.Exit(1)
 }
