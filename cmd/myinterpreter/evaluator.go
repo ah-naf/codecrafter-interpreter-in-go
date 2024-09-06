@@ -157,7 +157,7 @@ func (b *Binary) Eval() interface{} {
 			return leftVal != rightVal
 		}
 
-		raiseBinaryTypeError(b.Line, leftVal, rightVal, BANG_EQUAL)
+		return false
 	case EQUAL_EQUAL:
 		leftNum, leftIsNum := toNumber(leftVal)
 		rightNum, rightIsNum := toNumber(rightVal)
@@ -168,7 +168,7 @@ func (b *Binary) Eval() interface{} {
 			return leftVal == rightVal
 		}
 
-		raiseBinaryTypeError(b.Line, leftVal, rightVal, EQUAL_EQUAL)
+		return false
 	}
 
 	return nil
