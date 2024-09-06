@@ -110,7 +110,8 @@ func (b *Binary) Eval() interface{} {
 		}
 
 		// Raise an error for incompatible types
-		raiseBinaryTypeError(b.Line, leftVal, rightVal, "/")
+		fmt.Fprintf(os.Stderr, "Operands must be a number.\n[line %d]", b.Line)
+		os.Exit(70)
 	case GT:
 		leftNum, leftIsNum := toNumber(leftVal)
 		rightNum, rightIsNum := toNumber(rightVal)
@@ -189,7 +190,8 @@ func handleBinaryNumberOperation(leftVal, rightVal interface{}, operator string,
 	}
 
 	// Raise an error for incompatible types
-	raiseBinaryTypeError(line, leftVal, rightVal, operator)
+	fmt.Fprintf(os.Stderr, "Operands must be a number.\n[line %d]", line)
+	os.Exit(70)
 	return nil
 }
 
