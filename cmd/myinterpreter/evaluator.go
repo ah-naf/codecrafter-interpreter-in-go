@@ -17,6 +17,17 @@ func (l *Literal) Eval() interface{} {
 	if l.Value == nil {
 		return "nil"
 	}
+
+	// If it's a number string, convert it
+	if num, ok := l.Value.(string); ok && isNumber(num) {
+		value, err := ConvertStringToFloat(num, 0) // 0 for line number as it's a literal
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return nil
+		}
+		return value
+	}
+
 	return l.Value // Return the literal value (true, false, or nil)
 }
 
@@ -27,7 +38,6 @@ func (g *Grouping) Eval() interface{} {
 
 // Eval method for Unary handles unary operators like ! and -
 func (u *Unary) Eval() interface{} {
-	fmt.Printf("%#v\n", u.String())
 	rightVal := u.Right.Eval() // Evaluate the right-hand expression
 
 	switch u.Operator.Type {
@@ -78,6 +88,12 @@ func isTruthy(value interface{}) bool {
 		return boolean
 	}
 	return true
+}
+
+// Helper function to check if a string is a number
+func isNumber(value string) bool {
+	_, err := strconv.ParseFloat(value, 64)
+	return err == nil
 }
 
 // ConvertStringToFloat tries to convert a string to a float64.
