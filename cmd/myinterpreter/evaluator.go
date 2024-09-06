@@ -55,13 +55,11 @@ func (u *Unary) Eval() interface{} {
 			// Use the ConvertStringToFloat function to handle string conversion and error reporting
 			value, err := ConvertStringToFloat(num, u.Line)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "Operand must be a number.\n[line %d]\n", u.Line)
-				os.Exit(70)
+				raiseRuntimeError(u.Line)
 			}
 			return -value // Negate the converted float64 number
 		default:
-			fmt.Fprintf(os.Stderr, "Operand must be a number.\n[line %d]\n", u.Line)
-			os.Exit(70)
+			raiseRuntimeError(u.Line)
 		}
 	}
 
@@ -91,8 +89,7 @@ func (b *Binary) Eval() interface{} {
 		}
 
 		// Raise an error for incompatible types
-		fmt.Fprintf(os.Stderr, "Operands must be two numbers or two strings.\n[line %d]", b.Line)
-		os.Exit(70)
+		raiseRuntimeError(b.Line)
 	case MINUS: // Handle subtraction
 		return handleBinaryNumberOperation(leftVal, rightVal, "-", b.Line)
 	case STAR: // Handle multiplication
@@ -111,8 +108,7 @@ func (b *Binary) Eval() interface{} {
 		}
 
 		// Raise an error for incompatible types
-		fmt.Fprintf(os.Stderr, "Operands must be a number.\n[line %d]", b.Line)
-		os.Exit(70)
+		raiseRuntimeError(b.Line)
 	case GT:
 		leftNum, leftIsNum := toNumber(leftVal)
 		rightNum, rightIsNum := toNumber(rightVal)
@@ -121,7 +117,7 @@ func (b *Binary) Eval() interface{} {
 			return leftNum > rightNum
 		}
 
-		raiseBinaryTypeError(b.Line, leftVal, rightVal, GT)
+		raiseRuntimeError(b.Line)
 	case LT:
 		leftNum, leftIsNum := toNumber(leftVal)
 		rightNum, rightIsNum := toNumber(rightVal)
@@ -130,7 +126,7 @@ func (b *Binary) Eval() interface{} {
 			return leftNum < rightNum
 		}
 
-		raiseBinaryTypeError(b.Line, leftVal, rightVal, LT)
+		raiseRuntimeError(b.Line)
 	case GREATER_EQUAL:
 		leftNum, leftIsNum := toNumber(leftVal)
 		rightNum, rightIsNum := toNumber(rightVal)
@@ -139,7 +135,7 @@ func (b *Binary) Eval() interface{} {
 			return leftNum >= rightNum
 		}
 
-		raiseBinaryTypeError(b.Line, leftVal, rightVal, GREATER_EQUAL)
+		raiseRuntimeError(b.Line)
 	case LESS_EQUAL:
 		leftNum, leftIsNum := toNumber(leftVal)
 		rightNum, rightIsNum := toNumber(rightVal)
@@ -148,7 +144,7 @@ func (b *Binary) Eval() interface{} {
 			return leftNum <= rightNum
 		}
 
-		raiseBinaryTypeError(b.Line, leftVal, rightVal, LESS_EQUAL)
+		raiseRuntimeError(b.Line)
 	case BANG_EQUAL:
 		leftNum, leftIsNum := toNumber(leftVal)
 		rightNum, rightIsNum := toNumber(rightVal)
@@ -191,8 +187,7 @@ func handleBinaryNumberOperation(leftVal, rightVal interface{}, operator string,
 	}
 
 	// Raise an error for incompatible types
-	fmt.Fprintf(os.Stderr, "Operands must be a number.\n[line %d]", line)
-	os.Exit(70)
+	raiseRuntimeError(line)
 	return nil
 }
 
@@ -238,7 +233,7 @@ func toNumber(value interface{}) (float64, bool) {
 
 
 // Helper function to raise a type error for binary operations
-func raiseBinaryTypeError(line int, leftVal, rightVal interface{}, operator string) {
-	fmt.Fprintf(os.Stderr, "[line %d] Error: Cannot apply '%s' to %T and %T\n", line, operator, leftVal, rightVal)
-	os.Exit(1)
+func raiseRuntimeError(line int) {
+	fmt.Fprintf(os.Stderr, "Operands must be a number.\n[line %d]", line)
+	os.Exit(70)
 }
