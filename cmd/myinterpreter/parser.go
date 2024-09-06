@@ -29,7 +29,7 @@ func(p *Parser) parseEquality() Expr {
 	for p.match("EQUAL_EQUAL", "BANG_EQUAL") {
 		operator := p.previous()
 		right := p.parseComparison()
-		expr = &Binary{Left: expr, Operator: operator, Right: right}
+		expr = &Binary{Left: expr, Operator: operator, Right: right, Line: operator.Line}
 	}
 
 	return expr
@@ -42,7 +42,7 @@ func (p *Parser) parseComparison() Expr {
 	for p.match("GREATER", "GREATER_EQUAL", "LESS", "LESS_EQUAL") { // Look for comparison operators
 		operator := p.previous()
 		right := p.parseAdditionSubstraction() // Parse the right-hand operand
-		expr = &Binary{Left: expr, Operator: operator, Right: right}
+		expr = &Binary{Left: expr, Operator: operator, Right: right, Line: operator.Line}
 	}
 
 	return expr
@@ -55,7 +55,7 @@ func (p *Parser) parseAdditionSubstraction() Expr {
 	for p.match("PLUS", "MINUS") {
 		operator := p.previous()
 		right := p.parseMultiplication()
-		expr = &Binary{Left: expr, Operator: operator, Right: right}
+		expr = &Binary{Left: expr, Operator: operator, Right: right, Line: operator.Line}
 	}
 
 	return expr
@@ -68,7 +68,7 @@ func (p *Parser) parseMultiplication() Expr {
 	for p.match("STAR", "SLASH") { // Look for * or / operators
 		operator := p.previous()
 		right := p.parseUnary() // Parse the right-hand operand (which could be a unary expression)
-		expr = &Binary{Left: expr, Operator: operator, Right: right}
+		expr = &Binary{Left: expr, Operator: operator, Right: right, Line: operator.Line}
 	}
 
 	return expr
@@ -79,7 +79,7 @@ func (p *Parser) parseUnary() Expr {
 	if p.match("BANG", "MINUS") { // Check for the unary operators
 		operator := p.previous()
 		right := p.parseUnary() // Recursively parse the right-hand operand
-		return &Unary{Operator: operator, Right: right}
+		return &Unary{Operator: operator, Right: right, Line: operator.Line}
 	}
 
 	// If it's not a unary expression, parse a primary expression

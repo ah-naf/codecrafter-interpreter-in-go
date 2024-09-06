@@ -35,6 +35,7 @@ func (g *Grouping) String() string {
 type Unary struct {
 	Operator Token
 	Right    Expr
+	Line 	 int
 }
 
 func (u *Unary) String() string {
@@ -46,6 +47,7 @@ type Binary struct {
 	Left     Expr
 	Operator Token
 	Right    Expr
+	Line	 int
 }
 
 func (b *Binary) String() string {
