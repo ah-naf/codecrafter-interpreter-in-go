@@ -90,15 +90,15 @@ func (p *Parser) parseUnary() Expr {
 func (p *Parser) parsePrimary() Expr {
 	switch {
 	case p.match("TRUE"):
-		return &Literal{Value: true}
+		return &Literal{Value: true, Type: "boolean"}
 	case p.match("FALSE"):
-		return &Literal{Value: false}
+		return &Literal{Value: false, Type: "boolean"}
 	case p.match("NIL"):
-		return &Literal{Value: nil}
+		return &Literal{Value: nil, Type: "nil"}
 	case p.match("NUMBER"):
-		return &Literal{Value: p.previous().Literal}
+		return &Literal{Value: p.previous().Literal, Type: "number"}
 	case p.match("STRING"):
-		return &Literal{Value: p.previous().Literal}
+		return &Literal{Value: p.previous().Literal, Type: "string"}
 	case p.match("LEFT_PAREN"):
 		expr := p.parseEquality() // Recursively parse the inner expression inside parentheses
 		p.consume("RIGHT_PAREN", "Expect ')' after expression.")

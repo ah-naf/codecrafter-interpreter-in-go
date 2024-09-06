@@ -18,13 +18,15 @@ func (l *Literal) Eval() interface{} {
 		return "nil"
 	}
 	// If it's a number string, convert it
-	if num, ok := l.Value.(string); ok && isNumber(num) {
-		value, err := ConvertStringToFloat(num, 0) // 0 for line number as it's a literal
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			return nil
+	if l.Type == "number" {
+		if num, ok := l.Value.(string); ok && isNumber(num) {
+			value, err := ConvertStringToFloat(num, 0) // 0 for line number as it's a literal
+			if err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				return nil
+			}
+			return value
 		}
-		return value
 	}
 
 	return l.Value // Return the literal value (true, false, or nil)

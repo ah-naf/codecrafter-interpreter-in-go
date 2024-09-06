@@ -12,6 +12,7 @@ type Expr interface {
 // Literal struct for literal values (booleans, numbers, strings, nil)
 type Literal struct {
 	Value interface{}
+	Type string
 }
 
 // String method for Literal to print its content
