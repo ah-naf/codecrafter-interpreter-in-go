@@ -30,6 +30,9 @@ func main() {
 	case "tokenize":
 		scanner := NewLexer(string(rawFileContent), logEnabled)
 		scanner.ScanTokens()
+		// for _, token := range scanner.tokens {
+		// 	fmt.Printf("%#v\n", token)
+		// }
 	case "parse":
 		scanner := NewLexer(string(rawFileContent), logEnabled)
 		scanner.ScanTokens() // Tokenize first
@@ -49,20 +52,3 @@ func main() {
 		os.Exit(1)
 	}
 }
-
-// DebugStruct function to print the values of Lexer and Parser
-// func DebugStruct(lexer *Lexer, parser *Parser) {
-// 	fmt.Println("===== Lexer State =====")
-// 	fmt.Printf("Source Code: %s\n", lexer.source)
-// 	fmt.Printf("Current Character: %c\n", lexer.ch)
-// 	fmt.Printf("Current Position: %d\n", lexer.position)
-// 	fmt.Printf("Next Position: %d\n", lexer.nextPosition)
-// 	fmt.Printf("Line: %d\n", lexer.line)
-// 	fmt.Println("Tokens:")
-// 	for _, token := range lexer.tokens {
-// 		fmt.Printf("Type: %s, Lexeme: %s, Literal: %s, Line: %d\n",
-// 			token.Type, token.Lexeme, token.Literal, token.Line)
-// 	}
-
-	
-// }

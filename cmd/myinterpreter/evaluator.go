@@ -7,11 +7,6 @@ import (
 	"strconv"
 )
 
-// ExprEvaluator is an interface for expressions that can be evaluated
-type ExprEvaluator interface {
-	Eval() interface{} // Method to evaluate the expression
-}
-
 // Eval method for Literal evaluates and returns the value of the literal
 func (l *Literal) Eval() interface{} {
 	if l.Value == nil {

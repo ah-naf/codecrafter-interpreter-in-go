@@ -3,6 +3,11 @@ package main
 
 import "fmt"
 
+// ExprEvaluator is an interface for expressions that can be evaluated
+type ExprEvaluator interface {
+	Eval() interface{} // Method to evaluate the expression
+}
+
 // Expr interface for all expression nodes, extended to include ExprEvaluator
 type Expr interface {
 	String() string
