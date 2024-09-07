@@ -1,1 +1,12 @@
-print 2 + 3;
+print true != true;
+
+print "95
+17
+68
+";
+
+print "There should be an empty line above this";
+
+print "(" + "" + ")";
+
+print "non-ascii: ॐ";

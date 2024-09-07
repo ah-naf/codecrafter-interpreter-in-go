@@ -21,7 +21,18 @@ func NewParser(lexer *Lexer, mode string) *Parser {
 }
 
 // Parse starts parsing and returns the resulting AST
-func (p *Parser) Parse() Stmt {
+func (p *Parser) Parse() []Stmt {
+	statements := []Stmt{}
+
+	for !p.isAtEnd() {
+		statements = append(statements, p.parseStatement())
+	}
+
+	return statements
+}
+
+// parseStatement handles either print statements or expression statements
+func (p *Parser) parseStatement() Stmt {
 	if p.match("PRINT") {
 		return p.printStatement()
 	}
@@ -32,8 +43,8 @@ func (p *Parser) Parse() Stmt {
 func (p *Parser) printStatement() Stmt {
 	expr := p.parseEquality() // Parse the expression after "print"
 	if p.mode == "run" {
-		if p.isAtEnd() {
-			fmt.Fprintf(os.Stderr, "[line %d]: Expect ';' after expression\n", p.lexer.line)
+		if !p.checkSemicolon() {
+			fmt.Fprintf(os.Stderr, "[line %d]: Expect ';' after expression\n", p.previous().Line)
 			os.Exit(65)
 		}
 		p.consume("SEMICOLON", "Expect ';' after expression.")
@@ -45,8 +56,8 @@ func (p *Parser) printStatement() Stmt {
 func (p *Parser) expressionStatement() Stmt {
 	expr := p.parseEquality() // Parse the expression
 	if p.mode == "run" {
-		if p.isAtEnd() {
-			fmt.Fprintf(os.Stderr, "[line %d]: Expect ';' after expression", p.lexer.line)
+		if !p.checkSemicolon() {
+			fmt.Fprintf(os.Stderr, "[line %d]: Expect ';' after expression", p.previous().Line)
 			os.Exit(65)
 		}
 		p.consume("SEMICOLON", "Expect ';' after expression.")
@@ -176,4 +187,12 @@ func (p *Parser) error(msg string) {
 	token := p.lexer.tokens[p.pos]
 	fmt.Fprintf(os.Stderr, "[line %d] Error at '%s': %s\n", token.Line, token.Lexeme, msg)
 	os.Exit(65)
+}
+
+// checkSemicolon checks if the current token is a semicolon without advancing the position
+func (p *Parser) checkSemicolon() bool {
+	if p.isAtEnd() {
+		return false
+	}
+	return p.lexer.tokens[p.pos].Type == "SEMICOLON"
 }

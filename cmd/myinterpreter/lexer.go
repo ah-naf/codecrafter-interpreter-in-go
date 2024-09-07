@@ -214,7 +214,7 @@ func (l *Lexer) handleStringLiteral() {
 			l.addToken("STRING", literal, literal)
 			l.log(fmt.Sprintf("STRING \"%s\" %s", literal, literal))
 			return
-		} else if l.ch == 0 || l.ch == '\n' {
+		} else if l.ch == 0 {
 			l.reportErrorUnterminatedString()
 			return
 		}
