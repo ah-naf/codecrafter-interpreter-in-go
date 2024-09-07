@@ -59,3 +59,28 @@ type Binary struct {
 func (b *Binary) String() string {
 	return fmt.Sprintf("(%s %s %s)", b.Operator.Lexeme, b.Left.String(), b.Right.String())
 }
+
+
+// Stmt interface for statements
+type Stmt interface {
+	Expr // Method to evaluate the statement
+}
+
+// ExpressionStatement wraps an expression as a statement
+type ExpressionStatement struct {
+	Expression Expr
+}
+
+// String method for ExpressionStatement
+func (e *ExpressionStatement) String() string {
+	return e.Expression.String() // Return string representation of the expression
+}
+
+type PrintStatement struct {
+	Expression Expr
+}
+
+// String method for PrintStatement
+func (p *PrintStatement) String() string {
+	return fmt.Sprintf("(print %s)", p.Expression.String()) // Return string representation of print statement
+}

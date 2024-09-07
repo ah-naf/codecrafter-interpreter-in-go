@@ -7,6 +7,18 @@ import (
 	"strconv"
 )
 
+// Eval method for PrintStatement
+func (p *PrintStatement) Eval() interface{} {
+	value := p.Expression.Eval() // Evaluate the expression
+	fmt.Println(value) // Print the evaluated value
+	return nil
+}
+
+// Eval method for ExpressionStatement
+func (e *ExpressionStatement) Eval() interface{} {
+	return e.Expression.Eval() // Evaluate the expression
+}
+
 // Eval method for Literal evaluates and returns the value of the literal
 func (l *Literal) Eval() interface{} {
 	if l.Value == nil {

@@ -8,22 +8,53 @@ import (
 type Parser struct {
 	lexer *Lexer
 	pos   int
+	mode  string
 }
 
 // NewParser initializes a new parser with the lexer input
-func NewParser(lexer *Lexer) *Parser {
+func NewParser(lexer *Lexer, mode string) *Parser {
 	return &Parser{
 		lexer: lexer,
 		pos:   0,
+		mode:  mode,
 	}
 }
 
 // Parse starts parsing and returns the resulting AST
-func (p *Parser) Parse() Expr {
-	return p.parseEquality()
+func (p *Parser) Parse() Stmt {
+	if p.match("PRINT") {
+		return p.printStatement()
+	}
+	return p.expressionStatement()
 }
 
-func(p *Parser) parseEquality() Expr {
+// printStatement parses a print statement
+func (p *Parser) printStatement() Stmt {
+	expr := p.parseEquality() // Parse the expression after "print"
+	if p.mode == "run" {
+		if p.isAtEnd() {
+			fmt.Fprintf(os.Stderr, "[line %d]: Expect ';' after expression\n", p.lexer.line)
+			os.Exit(65)
+		}
+		p.consume("SEMICOLON", "Expect ';' after expression.")
+	}
+	return &PrintStatement{Expression: expr} // Return a PrintStatement node
+}
+
+// expressionStatement parses an expression statement
+func (p *Parser) expressionStatement() Stmt {
+	expr := p.parseEquality() // Parse the expression
+	if p.mode == "run" {
+		if p.isAtEnd() {
+			fmt.Fprintf(os.Stderr, "[line %d]: Expect ';' after expression", p.lexer.line)
+			os.Exit(65)
+		}
+		p.consume("SEMICOLON", "Expect ';' after expression.")
+	}
+	return &ExpressionStatement{Expression: expr} // Return an expression statement
+}
+
+func(p *Parser) parseEquality() Stmt {
 	expr := p.parseComparison()
 
 	for p.match("EQUAL_EQUAL", "BANG_EQUAL") {
