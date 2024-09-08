@@ -15,7 +15,7 @@ func (v *VarStmt) Eval(env *Environment) interface{} {
 		value = v.Initializer.Eval(env)
 	}
 	env.Define(v.Name, value)
-	return nil
+	return "nil"
 }
 
 // Eval method for variable
@@ -24,6 +24,9 @@ func (i *Identifier) Eval(env *Environment) interface{} {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Undefined variable '%s'.\n[line %d]\n", i.Name, i.Line)
 		os.Exit(70) // Exit with code 70
+	}
+	if value == nil {
+		value = "nil"
 	}
 	return value
 }
