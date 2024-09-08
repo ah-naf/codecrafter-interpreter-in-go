@@ -117,3 +117,16 @@ type AssignStmt struct {
 func (a *AssignStmt) String() string {
 	return fmt.Sprintf("(%s = %s)", a.Name, a.Value.String())
 }
+
+type BlockStmt struct {
+	Statements []Stmt
+}
+
+func (b *BlockStmt) String() string {
+	val := fmt.Sprintf("{\n")
+	for _, statement := range b.Statements {
+		val += fmt.Sprintf("%s\n", statement.String())
+	}
+	val += fmt.Sprint("}")
+	return val
+}
