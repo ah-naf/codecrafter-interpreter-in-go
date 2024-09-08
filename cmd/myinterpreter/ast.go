@@ -99,6 +99,7 @@ func (v *VarStmt) String() string {
 // Identifier represents a variable being used in an expression
 type Identifier struct {
 	Name string
+	Line int
 }
 
 func (i *Identifier) String() string {

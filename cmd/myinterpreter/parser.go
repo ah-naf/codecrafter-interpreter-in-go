@@ -159,7 +159,7 @@ func (p *Parser) parsePrimary() Expr {
 	case p.match("STRING"):
 		return &Literal{Value: p.previous().Literal, Type: "string"}
 	case p.match("IDENTIFIER"):
-		return &Identifier{Name: p.previous().Lexeme}
+		return &Identifier{Name: p.previous().Lexeme, Line: p.previous().Line}
 	case p.match("LEFT_PAREN"):
 		expr := p.parseEquality() // Recursively parse the inner expression inside parentheses
 		p.consume("RIGHT_PAREN", "Expect ')' after expression.")

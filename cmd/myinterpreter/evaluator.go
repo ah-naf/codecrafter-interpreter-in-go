@@ -22,8 +22,8 @@ func (v *VarStmt) Eval(env *Environment) interface{} {
 func (i *Identifier) Eval(env *Environment) interface{} {
 	value, err := env.Get(i.Name)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, err.Error())
-		os.Exit(65)
+		fmt.Fprintf(os.Stderr, "Undefined variable '%s'.\n[line %d]\n", i.Name, i.Line)
+		os.Exit(70) // Exit with code 70
 	}
 	return value
 }
