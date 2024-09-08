@@ -90,6 +90,8 @@ func (p *PrintStatement) String() string {
 type VarStmt struct {
 	Name        string
 	Initializer Expr
+	VarUsed		bool
+	Line 		int
 }
 
 func (v *VarStmt) String() string {
@@ -104,4 +106,14 @@ type Identifier struct {
 
 func (i *Identifier) String() string {
 	return i.Name
+}
+
+type AssignStmt struct {
+	Name  string
+	Value Expr
+	Line  int
+}
+
+func (a *AssignStmt) String() string {
+	return fmt.Sprintf("(%s = %s)", a.Name, a.Value.String())
 }

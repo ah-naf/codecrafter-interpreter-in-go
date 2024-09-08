@@ -1,2 +1,5 @@
-var a;
-print a;
+var hello;
+hello = 1;
+print hello;
+print hello = 2;
+print hello;

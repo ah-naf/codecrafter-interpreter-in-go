@@ -7,16 +7,37 @@ import (
 	"strconv"
 )
 
+// Eval method for AssignStmt
+func (a *AssignStmt) Eval(env *Environment) interface{} {
+	value := a.Value.Eval(env) // Evaluate the right-hand side
+	env.Define(a.Name, value)  // Assign the value to the variable
+	return value
+}
+
 // Eval method for VarStmt
 func (v *VarStmt) Eval(env *Environment) interface{} {
 	var value interface{}
 
+	// Check if the variable is used before declaration
+	if !v.VarUsed {
+		_, err := env.Get(v.Name)
+		if err != nil {
+			// Add variable name and line number to the error message
+			fmt.Fprintf(os.Stderr, "Cannot use variable '%s' before declaration.\n[line %d]\n", v.Name, v.Line)
+			os.Exit(70)
+		}
+	}
+
+	// Evaluate the initializer if present
 	if v.Initializer != nil {
 		value = v.Initializer.Eval(env)
 	}
+	
+	// Define the variable in the environment
 	env.Define(v.Name, value)
 	return "nil"
 }
+
 
 // Eval method for variable
 func (i *Identifier) Eval(env *Environment) interface{} {

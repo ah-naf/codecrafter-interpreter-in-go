@@ -37,8 +37,25 @@ func (p *Parser) parseStatement() Stmt {
 		return p.printStatement()
 	} else if p.match("VAR") {
 		return p.varDeclaration()
+	} else if p.match("IDENTIFIER") {
+		return p.varAssignment()
 	}
 	return p.expressionStatement()
+}
+
+// varAssignment parses a variable assigment
+func (p *Parser) varAssignment() Stmt {
+	identifier := p.previous()
+
+	var initializer Expr
+	if p.match("EQUAL") {
+		initializer = p.parseAssignment()
+		
+	}
+
+	// Ensure there's a semicolon after the variable declaration
+	p.consume("SEMICOLON", "Expect ';' after variable declaration.")
+	return &VarStmt{Name: identifier.Lexeme, Initializer: initializer, VarUsed: false, Line: p.previous().Line}
 }
 
 // varDeclaration parses a variable declaration
@@ -48,17 +65,17 @@ func (p *Parser) varDeclaration() Stmt {
 	identifier := p.previous()
 	var initializer Expr
 	if p.match("EQUAL") { // If '=' follows, there should be an initializer expression
-		initializer = p.parseEquality()
+		initializer = p.parseAssignment()
 	}
 
 	// Ensure there's a semicolon after the variable declaration
 	p.consume("SEMICOLON", "Expect ';' after variable declaration.")
-	return &VarStmt{Name: identifier.Lexeme, Initializer: initializer}
+	return &VarStmt{Name: identifier.Lexeme, Initializer: initializer, VarUsed: true, Line: p.previous().Line}
 }
 
 // printStatement parses a print statement
 func (p *Parser) printStatement() Stmt {
-	expr := p.parseEquality() // Parse the expression after "print"
+	expr := p.parseAssignment() // Parse the expression after "print"
 	if p.mode == "run" {
 		if !p.checkSemicolon() {
 			fmt.Fprintf(os.Stderr, "[line %d]: Expect ';' after expression\n", p.previous().Line)
@@ -71,7 +88,7 @@ func (p *Parser) printStatement() Stmt {
 
 // expressionStatement parses an expression statement
 func (p *Parser) expressionStatement() Stmt {
-	expr := p.parseEquality() // Parse the expression
+	expr := p.parseAssignment() // Parse the expression
 	if p.mode == "run" {
 		if !p.checkSemicolon() {
 			fmt.Fprintf(os.Stderr, "[line %d]: Expect ';' after expression", p.previous().Line)
@@ -80,6 +97,22 @@ func (p *Parser) expressionStatement() Stmt {
 		p.consume("SEMICOLON", "Expect ';' after expression.")
 	}
 	return &ExpressionStatement{Expression: expr} // Return an expression statement
+}
+
+func(p *Parser) parseAssignment() Stmt {
+	expr := p.parseEquality()
+
+	for p.match("EQUAL") {
+		equals := p.previous()
+		value := p.parseAssignment()
+
+		if identifier, ok := expr.(*Identifier); ok {
+			return &AssignStmt{Name: identifier.Name, Value: value, Line: equals.Line}
+		}
+		// p.error("Invalid Assignment ")
+
+	}
+	return expr
 }
 
 func(p *Parser) parseEquality() Stmt {
