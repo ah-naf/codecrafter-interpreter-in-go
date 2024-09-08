@@ -1,5 +1,8 @@
-var hello;
-hello = 1;
-print hello;
-print hello = 2;
-print hello;
+{
+    var world = "before";
+    print world;
+}
+{
+    var world = "after";
+    print world;
+}

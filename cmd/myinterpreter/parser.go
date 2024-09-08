@@ -39,9 +39,29 @@ func (p *Parser) parseStatement() Stmt {
 		return p.varDeclaration()
 	} else if p.match("IDENTIFIER") {
 		return p.varAssignment()
+	} else if p.match("LEFT_BRACE") {
+		return p.blockStatement()
 	}
 	return p.expressionStatement()
 }
+
+
+// blockStatement parses a block of statements enclosed in braces {}
+func (p *Parser) blockStatement() Stmt {
+	statements := []Stmt{}
+
+	// Loop to parse statements until a closing brace '}' is encountered
+	for !p.isAtEnd() && !p.check("RIGHT_BRACE") {
+		statements = append(statements, p.parseStatement())
+	}
+
+	// Ensure there's a closing brace for the block
+	p.consume("RIGHT_BRACE", "Expect '}' after block.")
+
+	return &BlockStmt{Statements: statements}
+}
+
+
 
 // varAssignment parses a variable assigment
 func (p *Parser) varAssignment() Stmt {
@@ -240,6 +260,14 @@ func (p *Parser) checkSemicolon() bool {
 		return false
 	}
 	return p.lexer.tokens[p.pos].Type == "SEMICOLON"
+}
+
+// check checks if the current token is of the expected type without consuming it
+func (p *Parser) check(tokenType string) bool {
+	if p.isAtEnd() {
+		return false
+	}
+	return p.lexer.tokens[p.pos].Type == tokenType
 }
 
 

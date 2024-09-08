@@ -7,6 +7,19 @@ import (
 	"strconv"
 )
 
+// Eval method for BlockStmt
+func (b *BlockStmt) Eval(env *Environment) interface{} {
+    // Create a new environment for the block
+    localEnv := NewEnvironmentWithParent(env)
+
+    // Evaluate each statement in the block with the new environment
+    for _, stmt := range b.Statements {
+        stmt.Eval(localEnv)
+    }
+
+    return nil
+}
+
 // Eval method for AssignStmt
 func (a *AssignStmt) Eval(env *Environment) interface{} {
 	value := a.Value.Eval(env) // Evaluate the right-hand side
