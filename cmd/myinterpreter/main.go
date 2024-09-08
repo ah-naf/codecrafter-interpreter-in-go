@@ -46,8 +46,11 @@ func main() {
 		scanner.ScanTokens() // Tokenize first
 		parser := NewParser(scanner, command)
 		statements := parser.Parse()  // Parse multiple statements
+
+		environment := NewEnvironment()
+
 		for _, stmt := range statements {
-			result := stmt.Eval()  // Evaluate each statement
+			result := stmt.Eval(environment)  // Evaluate each statement
 			fmt.Println(result)     // Print the evaluation result
 		}
 	case "run":
@@ -55,8 +58,11 @@ func main() {
 		scanner.ScanTokens()
 		parser := NewParser(scanner, command)
 		statements := parser.Parse()  // Parse the input
+
+		environment := NewEnvironment()
+
 		for _, stmt := range statements {
-			stmt.Eval()  // Evaluate each statement
+			stmt.Eval(environment)  // Evaluate each statement
 		}
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown command: %s\n", command)

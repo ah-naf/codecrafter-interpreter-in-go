@@ -7,20 +7,41 @@ import (
 	"strconv"
 )
 
+// Eval method for VarStmt
+func (v *VarStmt) Eval(env *Environment) interface{} {
+	var value interface{}
+
+	if v.Initializer != nil {
+		value = v.Initializer.Eval(env)
+	}
+	env.Define(v.Name, value)
+	return nil
+}
+
+// Eval method for variable
+func (i *Identifier) Eval(env *Environment) interface{} {
+	value, err := env.Get(i.Name)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, err.Error())
+		os.Exit(65)
+	}
+	return value
+}
+
 // Eval method for PrintStatement
-func (p *PrintStatement) Eval() interface{} {
-	value := p.Expression.Eval() // Evaluate the expression
+func (p *PrintStatement) Eval(env *Environment) interface{} {
+	value := p.Expression.Eval(env) // Evaluate the expression
 	fmt.Println(value) // Print the evaluated value
 	return nil
 }
 
 // Eval method for ExpressionStatement
-func (e *ExpressionStatement) Eval() interface{} {
-	return e.Expression.Eval() // Evaluate the expression
+func (e *ExpressionStatement) Eval(env *Environment) interface{} {
+	return e.Expression.Eval(env) // Evaluate the expression
 }
 
 // Eval method for Literal evaluates and returns the value of the literal
-func (l *Literal) Eval() interface{} {
+func (l *Literal) Eval(env *Environment) interface{} {
 	if l.Value == nil {
 		return "nil"
 	}
@@ -40,13 +61,13 @@ func (l *Literal) Eval() interface{} {
 }
 
 // Eval method for Grouping evaluates the inner expression
-func (g *Grouping) Eval() interface{} {
-	return g.Expression.Eval() // Evaluate the expression inside parentheses
+func (g *Grouping) Eval(env *Environment) interface{} {
+	return g.Expression.Eval(env) // Evaluate the expression inside parentheses
 }
 
 // Eval method for Unary handles unary operators like ! and -
-func (u *Unary) Eval() interface{} {
-	rightVal := u.Right.Eval() // Evaluate the right-hand expression
+func (u *Unary) Eval(env *Environment) interface{} {
+	rightVal := u.Right.Eval(env) // Evaluate the right-hand expression
 
 	switch u.Operator.Type {
 	case "BANG": // Logical NOT
@@ -74,9 +95,9 @@ func (u *Unary) Eval() interface{} {
 }
 
 // Eval method for Binary expressions (for future operators)
-func (b *Binary) Eval() interface{} {
-	leftVal := b.Left.Eval()
-	rightVal := b.Right.Eval()
+func (b *Binary) Eval(env *Environment) interface{} {
+	leftVal := b.Left.Eval(env)
+	rightVal := b.Right.Eval(env)
 	
 	switch b.Operator.Lexeme {
 	case PLUS: // Handle addition

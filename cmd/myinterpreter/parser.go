@@ -35,8 +35,25 @@ func (p *Parser) Parse() []Stmt {
 func (p *Parser) parseStatement() Stmt {
 	if p.match("PRINT") {
 		return p.printStatement()
+	} else if p.match("VAR") {
+		return p.varDeclaration()
 	}
 	return p.expressionStatement()
+}
+
+// varDeclaration parses a variable declaration
+func (p *Parser) varDeclaration() Stmt {
+	// Expect an identifier after 'var'
+	p.consume("IDENTIFIER", "Expect variable name.")
+	identifier := p.previous()
+	var initializer Expr
+	if p.match("EQUAL") { // If '=' follows, there should be an initializer expression
+		initializer = p.parseEquality()
+	}
+
+	// Ensure there's a semicolon after the variable declaration
+	p.consume("SEMICOLON", "Expect ';' after variable declaration.")
+	return &VarStmt{Name: identifier.Lexeme, Initializer: initializer}
 }
 
 // printStatement parses a print statement
@@ -141,6 +158,8 @@ func (p *Parser) parsePrimary() Expr {
 		return &Literal{Value: p.previous().Literal, Type: "number"}
 	case p.match("STRING"):
 		return &Literal{Value: p.previous().Literal, Type: "string"}
+	case p.match("IDENTIFIER"):
+		return &Identifier{Name: p.previous().Lexeme}
 	case p.match("LEFT_PAREN"):
 		expr := p.parseEquality() // Recursively parse the inner expression inside parentheses
 		p.consume("RIGHT_PAREN", "Expect ')' after expression.")
@@ -182,17 +201,22 @@ func (p *Parser) isAtEnd() bool {
 	return p.pos >= len(p.lexer.tokens)
 }
 
-// error reports a parsing error
-func (p *Parser) error(msg string) {
-	token := p.lexer.tokens[p.pos]
-	fmt.Fprintf(os.Stderr, "[line %d] Error at '%s': %s\n", token.Line, token.Lexeme, msg)
-	os.Exit(65)
-}
-
 // checkSemicolon checks if the current token is a semicolon without advancing the position
 func (p *Parser) checkSemicolon() bool {
 	if p.isAtEnd() {
 		return false
 	}
 	return p.lexer.tokens[p.pos].Type == "SEMICOLON"
+}
+
+
+func (p *Parser) error(msg string) {
+	if p.pos < len(p.lexer.tokens) {
+		token := p.lexer.tokens[p.pos]
+		fmt.Fprintf(os.Stderr, "[line %d] Error at '%s': %s\n", token.Line, token.Lexeme, msg)
+	} else {
+		// Handle the case where the token list is exhausted
+		fmt.Fprintf(os.Stderr, "[line %d] Error at end: %s\n", p.lexer.line, msg)
+	}
+	os.Exit(65)
 }

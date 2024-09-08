@@ -5,7 +5,7 @@ import "fmt"
 
 // ExprEvaluator is an interface for expressions that can be evaluated
 type ExprEvaluator interface {
-	Eval() interface{} // Method to evaluate the expression
+	Eval(env *Environment) interface{} // Method to evaluate the expression
 }
 
 // Expr interface for all expression nodes, extended to include ExprEvaluator
@@ -83,4 +83,24 @@ type PrintStatement struct {
 // String method for PrintStatement
 func (p *PrintStatement) String() string {
 	return fmt.Sprintf("(print %s)", p.Expression.String()) // Return string representation of print statement
+}
+
+
+// VarStmt represents a variable declaration statement
+type VarStmt struct {
+	Name        string
+	Initializer Expr
+}
+
+func (v *VarStmt) String() string {
+	return fmt.Sprintf("var %s = %v", v.Name, v.Initializer)
+}
+
+// Identifier represents a variable being used in an expression
+type Identifier struct {
+	Name string
+}
+
+func (i *Identifier) String() string {
+	return i.Name
 }
