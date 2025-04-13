@@ -41,9 +41,40 @@ func (p *Parser) parseStatement() Stmt {
 		return p.varAssignment()
 	} else if p.match("LEFT_BRACE") {
 		return p.blockStatement()
+	} else if p.match("IF") {
+		return p.ifStatement()
 	}
 	return p.expressionStatement()
 }
+
+func (p *Parser) ifStatement() Stmt {
+	p.consume("LEFT_PAREN", "Expect '(' after if statement")
+	condition := p.parseAssignment()
+	p.consume("RIGHT_PAREN", "Expect ')' after if condition expression")
+
+	if p.check("LEFT_BRACE") {
+		p.consume("LEFT_BRACE", "Expect '}' after if")
+		statements := []Stmt{}
+
+		for !p.isAtEnd() && !p.check("RIGHT_BRACE") {
+			statements = append(statements, p.parseStatement())
+		}
+
+		p.consume("RIGHT_BRACE", "Expect '}' after block.")
+
+		return &IfStmt{
+			Condition: condition,
+			Body:      statements,
+		}
+	} else {
+		statement := p.parseStatement()
+		return &IfStmt{
+			Condition: condition,
+			Body:      []Stmt{statement},
+		}
+	}
+}
+
 
 
 // blockStatement parses a block of statements enclosed in braces {}
@@ -61,8 +92,6 @@ func (p *Parser) blockStatement() Stmt {
 	return &BlockStmt{Statements: statements}
 }
 
-
-
 // varAssignment parses a variable assigment
 func (p *Parser) varAssignment() Stmt {
 	identifier := p.previous()
@@ -70,7 +99,7 @@ func (p *Parser) varAssignment() Stmt {
 	var initializer Expr
 	if p.match("EQUAL") {
 		initializer = p.parseAssignment()
-		
+
 	}
 
 	// Ensure there's a semicolon after the variable declaration
@@ -119,7 +148,7 @@ func (p *Parser) expressionStatement() Stmt {
 	return &ExpressionStatement{Expression: expr} // Return an expression statement
 }
 
-func(p *Parser) parseAssignment() Stmt {
+func (p *Parser) parseAssignment() Stmt {
 	expr := p.parseEquality()
 
 	for p.match("EQUAL") {
@@ -135,7 +164,7 @@ func(p *Parser) parseAssignment() Stmt {
 	return expr
 }
 
-func(p *Parser) parseEquality() Stmt {
+func (p *Parser) parseEquality() Stmt {
 	expr := p.parseComparison()
 
 	for p.match("EQUAL_EQUAL", "BANG_EQUAL") {
@@ -200,6 +229,7 @@ func (p *Parser) parseUnary() Expr {
 
 // parsePrimary handles numbers, strings, booleans, and parentheses
 func (p *Parser) parsePrimary() Expr {
+
 	switch {
 	case p.match("TRUE"):
 		return &Literal{Value: true, Type: "boolean"}
@@ -269,7 +299,6 @@ func (p *Parser) check(tokenType string) bool {
 	}
 	return p.lexer.tokens[p.pos].Type == tokenType
 }
-
 
 func (p *Parser) error(msg string) {
 	if p.pos < len(p.lexer.tokens) {

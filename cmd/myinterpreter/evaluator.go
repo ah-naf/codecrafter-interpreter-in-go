@@ -7,23 +7,42 @@ import (
 	"strconv"
 )
 
+func (i *IfStmt) Eval(env *Environment) interface{} {
+	condition := i.Condition.Eval(env)
+
+	if isTruthy(condition) {
+		localEnv := NewEnvironmentWithParent(env)
+		var result interface{}
+
+		for _, stmt := range i.Body {
+			result = stmt.Eval(localEnv)
+		}
+		return result
+	}
+
+	return nil
+}
+
 // Eval method for BlockStmt
 func (b *BlockStmt) Eval(env *Environment) interface{} {
-    // Create a new environment for the block
-    localEnv := NewEnvironmentWithParent(env)
+	// Create a new environment for the block
+	localEnv := NewEnvironmentWithParent(env)
 
-    // Evaluate each statement in the block with the new environment
-    for _, stmt := range b.Statements {
-        stmt.Eval(localEnv)
-    }
+	// Evaluate each statement in the block with the new environment
+	for _, stmt := range b.Statements {
+		stmt.Eval(localEnv)
+	}
 
-    return nil
+	return nil
 }
 
 // Eval method for AssignStmt
 func (a *AssignStmt) Eval(env *Environment) interface{} {
 	value := a.Value.Eval(env) // Evaluate the right-hand side
-	env.Define(a.Name, value)  // Assign the value to the variable
+	if err := env.Assign(a.Name, value); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+		os.Exit(70)
+	}
 	return value
 }
 
@@ -45,12 +64,20 @@ func (v *VarStmt) Eval(env *Environment) interface{} {
 	if v.Initializer != nil {
 		value = v.Initializer.Eval(env)
 	}
-	
-	// Define the variable in the environment
-	env.Define(v.Name, value)
+
+	// Differentiate between declarations and assignments.
+	if v.VarUsed {
+		// Declaration: create a new variable.
+		env.Define(v.Name, value)
+	} else {
+		// Assignment: update an existing variable.
+		if err := env.Assign(v.Name, value); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+			os.Exit(70)
+		}
+	}
 	return "nil"
 }
-
 
 // Eval method for variable
 func (i *Identifier) Eval(env *Environment) interface{} {
@@ -68,7 +95,7 @@ func (i *Identifier) Eval(env *Environment) interface{} {
 // Eval method for PrintStatement
 func (p *PrintStatement) Eval(env *Environment) interface{} {
 	value := p.Expression.Eval(env) // Evaluate the expression
-	fmt.Println(value) // Print the evaluated value
+	fmt.Println(value)              // Print the evaluated value
 	return nil
 }
 
@@ -135,7 +162,7 @@ func (u *Unary) Eval(env *Environment) interface{} {
 func (b *Binary) Eval(env *Environment) interface{} {
 	leftVal := b.Left.Eval(env)
 	rightVal := b.Right.Eval(env)
-	
+
 	switch b.Operator.Lexeme {
 	case PLUS: // Handle addition
 		leftNum, leftIsNum := toNumber(leftVal)
@@ -178,7 +205,7 @@ func (b *Binary) Eval(env *Environment) interface{} {
 		leftNum, leftIsNum := toNumber(leftVal)
 		rightNum, rightIsNum := toNumber(rightVal)
 
-		if(leftIsNum && rightIsNum) {
+		if leftIsNum && rightIsNum {
 			return leftNum > rightNum
 		}
 
@@ -187,7 +214,7 @@ func (b *Binary) Eval(env *Environment) interface{} {
 		leftNum, leftIsNum := toNumber(leftVal)
 		rightNum, rightIsNum := toNumber(rightVal)
 
-		if(leftIsNum && rightIsNum) {
+		if leftIsNum && rightIsNum {
 			return leftNum < rightNum
 		}
 
@@ -196,7 +223,7 @@ func (b *Binary) Eval(env *Environment) interface{} {
 		leftNum, leftIsNum := toNumber(leftVal)
 		rightNum, rightIsNum := toNumber(rightVal)
 
-		if(leftIsNum && rightIsNum) {
+		if leftIsNum && rightIsNum {
 			return leftNum >= rightNum
 		}
 
@@ -205,7 +232,7 @@ func (b *Binary) Eval(env *Environment) interface{} {
 		leftNum, leftIsNum := toNumber(leftVal)
 		rightNum, rightIsNum := toNumber(rightVal)
 
-		if(leftIsNum && rightIsNum) {
+		if leftIsNum && rightIsNum {
 			return leftNum <= rightNum
 		}
 
@@ -214,7 +241,7 @@ func (b *Binary) Eval(env *Environment) interface{} {
 		leftNum, leftIsNum := toNumber(leftVal)
 		rightNum, rightIsNum := toNumber(rightVal)
 
-		if(leftIsNum && rightIsNum) {
+		if leftIsNum && rightIsNum {
 			return leftNum != rightNum
 		} else if !leftIsNum && !rightIsNum {
 			return leftVal != rightVal
@@ -225,7 +252,7 @@ func (b *Binary) Eval(env *Environment) interface{} {
 		leftNum, leftIsNum := toNumber(leftVal)
 		rightNum, rightIsNum := toNumber(rightVal)
 
-		if(leftIsNum && rightIsNum) {
+		if leftIsNum && rightIsNum {
 			return leftNum == rightNum
 		} else if !leftIsNum && !rightIsNum {
 			return leftVal == rightVal
@@ -295,7 +322,6 @@ func toNumber(value interface{}) (float64, bool) {
 		return 0, false
 	}
 }
-
 
 // Helper function to raise a type error for binary operations
 func raiseRuntimeError(line int) {

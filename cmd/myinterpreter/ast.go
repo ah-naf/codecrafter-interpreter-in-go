@@ -17,7 +17,7 @@ type Expr interface {
 // Literal struct for literal values (booleans, numbers, strings, nil)
 type Literal struct {
 	Value interface{}
-	Type string
+	Type  string
 }
 
 // String method for Literal to print its content
@@ -41,7 +41,7 @@ func (g *Grouping) String() string {
 type Unary struct {
 	Operator Token
 	Right    Expr
-	Line 	 int
+	Line     int
 }
 
 func (u *Unary) String() string {
@@ -53,13 +53,12 @@ type Binary struct {
 	Left     Expr
 	Operator Token
 	Right    Expr
-	Line	 int
+	Line     int
 }
 
 func (b *Binary) String() string {
 	return fmt.Sprintf("(%s %s %s)", b.Operator.Lexeme, b.Left.String(), b.Right.String())
 }
-
 
 // Stmt interface for statements
 type Stmt interface {
@@ -85,13 +84,12 @@ func (p *PrintStatement) String() string {
 	return fmt.Sprintf("(print %s)", p.Expression.String()) // Return string representation of print statement
 }
 
-
 // VarStmt represents a variable declaration statement
 type VarStmt struct {
 	Name        string
 	Initializer Expr
-	VarUsed		bool
-	Line 		int
+	VarUsed     bool
+	Line        int
 }
 
 func (v *VarStmt) String() string {
@@ -128,5 +126,19 @@ func (b *BlockStmt) String() string {
 		val += fmt.Sprintf("%s\n", statement.String())
 	}
 	val += fmt.Sprint("}")
+	return val
+}
+
+type IfStmt struct {
+	Condition Stmt
+	Body      []Stmt
+}
+
+func (b *IfStmt) String() string {
+	val := fmt.Sprintf("if (%v) {\n", b.Condition)
+	for _, statement := range b.Body {
+		val += fmt.Sprintf("%s\n", statement.String())
+	}
+	val += "}"
 	return val
 }
