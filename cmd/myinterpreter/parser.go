@@ -41,14 +41,38 @@ func (p *Parser) parseStatement() Stmt {
 		return p.blockStatement()
 	} else if p.match("IF") {
 		return p.ifStatement()
+	} else if p.match("WHILE") {
+		return p.whileStatement()
 	}
 	return p.expressionStatement()
+}
+
+func (p *Parser) whileStatement() Stmt {
+	p.consume("LEFT_PAREN", "Expect '(' after if statement")
+	condition := p.parseAssignment()
+	p.consume("RIGHT_PAREN", "Expect ')' after if condition expression")
+
+	var body []Stmt
+	if p.check("LEFT_BRACE") {
+		p.consume("LEFT_BRACE", "Expect '{' after while")
+		for !p.isAtEnd() && !p.check("RIGHT_BRACE") {
+			body = append(body, p.parseStatement())
+		}
+		p.consume("RIGHT_BRACE", "Expect '}' after block.")
+	} else {
+		body = []Stmt{p.parseStatement()}
+	}
+
+	return &WhileStmt{
+		Condition: condition,
+		Body: body,
+	}
 }
 
 func (p *Parser) ifStatement() Stmt {
 	// Parse condition.
 	p.consume("LEFT_PAREN", "Expect '(' after if statement")
-	condition := p.parseAssignment() // Use assignment level so that side effects inside parentheses work.
+	condition := p.parseAssignment()
 	p.consume("RIGHT_PAREN", "Expect ')' after if condition expression")
 
 	// Parse "if" branch.

@@ -1,9 +1,12 @@
-var stage = "unknown";
-var age = 14;
-if (age < 18) { stage = "child"; }
-if (age >= 18) { stage = "adult"; }
-print stage;
+var n = 10;
+var fm = 0;
+var fn = 1;
+var index = 0;
 
-var isAdult = age >= 18;
-if (isAdult) { print "eligible for voting: true"; }
-if (!isAdult) { print "eligible for voting: false"; }
+while (index < n) {
+  print fm;
+  var temp = fm;
+  fm = fn;
+  fn = temp + fn;
+  index = index + 1;
+}

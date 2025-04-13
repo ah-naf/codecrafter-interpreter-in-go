@@ -150,3 +150,17 @@ func (b *IfStmt) String() string {
 	}
 	return val
 }
+
+type WhileStmt struct {
+	Condition Stmt
+	Body []Stmt
+}
+
+func (w *WhileStmt) String() string {
+	val := fmt.Sprintf("while (%v) {\n", w.Condition)
+	for _, statement := range w.Body {
+		val += fmt.Sprintf("%s\n", statement.String())
+	}
+	val += "}"
+	return val
+}
