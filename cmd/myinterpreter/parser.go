@@ -52,6 +52,12 @@ func (p *Parser) parseStatement() Stmt {
 func (p *Parser) forStatement() Stmt {
 	p.consume("LEFT_PAREN", "Expect '(' after 'for'.")
 
+	if p.check("LEFT_BRACE") {
+		p.customError("Expect expression.", "{", p.previous().Line+1)
+		p.customError("Expect ';' after expression.", ")", p.previous().Line+1)
+		os.Exit(65)
+	}
+
 	var initializer Stmt
 	if p.match("SEMICOLON") {
 		initializer = nil
@@ -59,6 +65,12 @@ func (p *Parser) forStatement() Stmt {
 		initializer = p.varDeclaration()
 	} else {
 		initializer = p.expressionStatement()
+	}
+
+	if p.check("LEFT_BRACE") {
+		p.customError("Expect expression.", "{", p.previous().Line+1)
+		p.customError("Expect ';' after expression.", ")", p.previous().Line+1)
+		os.Exit(65)
 	}
 
 	var condition Expr
@@ -69,12 +81,20 @@ func (p *Parser) forStatement() Stmt {
 	}
 	p.consume("SEMICOLON", "Expect ';' after loop condition.")
 
+	if p.check("LEFT_BRACE") {
+		p.customError("Expect expression.", "{", p.previous().Line+1)
+		os.Exit(65)
+	}
 	var increment Expr
 	if !p.check("RIGHT_PAREN") {
 		increment = p.parseAssignment()
 	}
 	p.consume("RIGHT_PAREN", "Expect ')' after for clauses.")
 
+	if p.check("VAR") {
+		p.customError("Expect expression.", "var", p.previous().Line)
+		os.Exit(65)
+	}
 	body := p.parseStatement()
 
 	return &ForStmt{
@@ -91,6 +111,11 @@ func (p *Parser) whileStatement() Stmt {
 	p.consume("RIGHT_PAREN", "Expect ')' after if condition expression")
 
 	var body []Stmt
+	if p.check("VAR") {
+		p.customError("Expect expression.", "var", p.previous().Line)
+		os.Exit(65)
+	}
+
 	if p.check("LEFT_BRACE") {
 		p.consume("LEFT_BRACE", "Expect '{' after while")
 		for !p.isAtEnd() && !p.check("RIGHT_BRACE") {
@@ -103,7 +128,7 @@ func (p *Parser) whileStatement() Stmt {
 
 	return &WhileStmt{
 		Condition: condition,
-		Body: body,
+		Body:      body,
 	}
 }
 
@@ -115,6 +140,11 @@ func (p *Parser) ifStatement() Stmt {
 
 	// Parse "if" branch.
 	var ifBranch []Stmt
+
+	if p.check("VAR") {
+		p.customError("Expect expression.", "var", p.previous().Line)
+		os.Exit(65)
+	}
 	if p.check("LEFT_BRACE") {
 		p.consume("LEFT_BRACE", "Expect '{' after if")
 		for !p.isAtEnd() && !p.check("RIGHT_BRACE") {
@@ -129,6 +159,10 @@ func (p *Parser) ifStatement() Stmt {
 	// Optional: Parse "else" branch.
 	var elseBranch []Stmt
 	if p.match("ELSE") {
+		if p.check("VAR") {
+			p.customError("Expect expression.", "var", p.previous().Line)
+			os.Exit(65)
+		}
 		if p.check("LEFT_BRACE") {
 			p.consume("LEFT_BRACE", "Expect '{' after else")
 			for !p.isAtEnd() && !p.check("RIGHT_BRACE") {
@@ -181,7 +215,10 @@ func (p *Parser) varDeclaration() Stmt {
 	var initializer Expr
 	if p.match("EQUAL") {
 		initializer = p.parseAssignment()
+	} else {
+		initializer = &Literal{Value: nil, Type: "nil"}
 	}
+
 	p.consume("SEMICOLON", "Expect ';' after variable declaration.")
 	return &VarStmt{
 		Name:        identifier.Lexeme,
@@ -316,7 +353,6 @@ func (p *Parser) parseAdditionSubstraction() Expr {
 }
 
 // parseMultiplication handles * and / operators.
-// (Note the change: we now call parseUnary() here to break the recursion cycle.)
 func (p *Parser) parseMultiplication() Expr {
 	expr := p.parseUnary()
 	for p.match("STAR", "SLASH") {
@@ -423,4 +459,8 @@ func (p *Parser) error(msg string) {
 		fmt.Fprintf(os.Stderr, "[line %d] Error at end: %s\n", p.lexer.line, msg)
 	}
 	os.Exit(65)
+}
+
+func (p *Parser) customError(msg, lexem string, line int) {
+	fmt.Fprintf(os.Stderr, "[line %d] Error at '%s': %s\n", line, lexem, msg)
 }
