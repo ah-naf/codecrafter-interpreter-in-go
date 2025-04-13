@@ -157,7 +157,7 @@ func (p *Parser) expressionStatement() Stmt {
 
 // parseAssignment parses assignment expressions (lowest precedence).
 func (p *Parser) parseAssignment() Stmt {
-	expr := p.parseLogicalOR()
+	expr := p.parseLogicalAND()
 	for p.match("EQUAL") {
 		equals := p.previous()
 		value := p.parseAssignment()
@@ -169,6 +169,22 @@ func (p *Parser) parseAssignment() Stmt {
 			}
 		}
 		// Optionally, report an error for invalid assignment target.
+	}
+	return expr
+}
+
+// parseLogicalAND parses "and" expressions.
+func (p *Parser) parseLogicalAND() Expr {
+	expr := p.parseLogicalOR()
+	for p.match("AND") {
+		operator := p.previous()
+		right := p.parseLogicalOR()
+		expr = &Binary{
+			Left:     expr,
+			Operator: operator,
+			Right:    right,
+			Line:     operator.Line,
+		}
 	}
 	return expr
 }

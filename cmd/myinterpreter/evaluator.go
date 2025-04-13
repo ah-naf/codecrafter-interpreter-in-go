@@ -238,7 +238,11 @@ func (b *Binary) Eval(env *Environment) interface{} {
 			return leftVal
 		}
 		return rightVal
-
+	case "and":
+		if !isTruthy(b.Left.Eval(env)) {
+			return leftVal
+		}
+		return rightVal
 	}
 
 	return nil
