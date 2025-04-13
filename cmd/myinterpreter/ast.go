@@ -153,7 +153,7 @@ func (b *IfStmt) String() string {
 
 type WhileStmt struct {
 	Condition Stmt
-	Body []Stmt
+	Body      []Stmt
 }
 
 func (w *WhileStmt) String() string {
@@ -163,4 +163,28 @@ func (w *WhileStmt) String() string {
 	}
 	val += "}"
 	return val
+}
+
+type ForStmt struct {
+	Initializer Stmt
+	Condition   Expr
+	Increment   Expr
+	Body        Stmt
+}
+
+func (f *ForStmt) String() string {
+	s := "for ("
+	if f.Initializer != nil {
+		s += f.Initializer.String() + " "
+	}
+	s += "; "
+	if f.Condition != nil {
+		s += f.Condition.String()
+	}
+	s += "; "
+	if f.Increment != nil {
+		s += f.Increment.String()
+	}
+	s += ") " + f.Body.String()
+	return s
 }

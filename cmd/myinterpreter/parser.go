@@ -43,8 +43,46 @@ func (p *Parser) parseStatement() Stmt {
 		return p.ifStatement()
 	} else if p.match("WHILE") {
 		return p.whileStatement()
+	} else if p.match("FOR") {
+		return p.forStatement()
 	}
 	return p.expressionStatement()
+}
+
+func (p *Parser) forStatement() Stmt {
+	p.consume("LEFT_PAREN", "Expect '(' after 'for'.")
+
+	var initializer Stmt
+	if p.match("SEMICOLON") {
+		initializer = nil
+	} else if p.match("VAR") {
+		initializer = p.varDeclaration()
+	} else {
+		initializer = p.expressionStatement()
+	}
+
+	var condition Expr
+	if !p.check("SEMICOLON") {
+		condition = p.parseAssignment()
+	} else {
+		condition = &Literal{Value: true, Type: "boolean"}
+	}
+	p.consume("SEMICOLON", "Expect ';' after loop condition.")
+
+	var increment Expr
+	if !p.check("RIGHT_PAREN") {
+		increment = p.parseAssignment()
+	}
+	p.consume("RIGHT_PAREN", "Expect ')' after for clauses.")
+
+	body := p.parseStatement()
+
+	return &ForStmt{
+		Initializer: initializer,
+		Condition:   condition,
+		Increment:   increment,
+		Body:        body,
+	}
 }
 
 func (p *Parser) whileStatement() Stmt {

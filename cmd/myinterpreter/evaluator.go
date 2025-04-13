@@ -7,6 +7,22 @@ import (
 	"strconv"
 )
 
+func (f *ForStmt) Eval(env *Environment) interface{} {
+	if f.Initializer != nil {
+		f.Initializer.Eval(env)
+	}
+
+	for isTruthy(f.Condition.Eval(env)) {
+		f.Body.Eval(env)
+
+		if f.Increment != nil {
+			f.Increment.Eval(env)
+		}
+	}
+
+	return nil
+}
+
 func (w *WhileStmt) Eval(env *Environment) interface{} {
 	for isTruthy(w.Condition.Eval(env)) {
 		localEnv := NewEnvironmentWithParent(env)
