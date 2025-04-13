@@ -188,3 +188,19 @@ func (f *ForStmt) String() string {
 	s += ") " + f.Body.String()
 	return s
 }
+
+type CallExpr struct {
+	Callee    Expr
+	Arguments []Expr
+}
+
+func (c *CallExpr) String() string {
+	args := ""
+	for i, arg := range c.Arguments {
+		if i > 0 {
+			args += ", "
+		}
+		args += arg.String()
+	}
+	return fmt.Sprintf("%s(%s)", c.Callee.String(), args)
+}

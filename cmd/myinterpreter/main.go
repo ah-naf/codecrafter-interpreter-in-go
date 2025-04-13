@@ -4,6 +4,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"time"
 )
 
 func main() {
@@ -48,6 +49,7 @@ func main() {
 		statements := parser.Parse() // Parse multiple statements
 
 		environment := NewEnvironment()
+		setupNativeFunction(environment)
 
 		for _, stmt := range statements {
 			result := stmt.Eval(environment) // Evaluate each statement
@@ -60,6 +62,7 @@ func main() {
 		statements := parser.Parse() // Parse the input
 
 		environment := NewEnvironment()
+		setupNativeFunction(environment)
 
 		for _, stmt := range statements {
 			stmt.Eval(environment) // Evaluate each statement
@@ -68,4 +71,13 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Unknown command: %s\n", command)
 		os.Exit(1)
 	}
+}
+
+func setupNativeFunction(env *Environment) {
+	env.Define("clock", &NativeFunction{
+		arity: 0,
+		function: func(args []interface{}) interface{} {
+			return time.Now().Unix()
+		},
+	})
 }

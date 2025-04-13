@@ -7,6 +7,28 @@ import (
 	"strconv"
 )
 
+func (c *CallExpr) Eval(env *Environment) interface{} {
+	calleval := c.Callee.Eval(env)
+
+	callable, ok := calleval.(Callable)
+	if !ok {
+		fmt.Fprintln(os.Stderr, "Can only call functions and classes.")
+		os.Exit(70)
+	}
+
+	var arguments []interface{}
+	for _, arg := range c.Arguments {
+		arguments = append(arguments, arg.Eval(env))
+	}
+
+	if len(arguments) != callable.Arity() {
+		fmt.Fprintf(os.Stderr, "Expected %d arguments but got %d.\n", callable.Arity(), len(arguments))
+		os.Exit(70)
+	}
+
+	return callable.Call(env, arguments)
+}
+
 func (f *ForStmt) Eval(env *Environment) interface{} {
 	if f.Initializer != nil {
 		f.Initializer.Eval(env)
@@ -168,7 +190,6 @@ func (b *Binary) Eval(env *Environment) interface{} {
 	case PLUS: // Handle addition
 		leftNum, leftIsNum := toNumber(leftVal)
 		rightNum, rightIsNum := toNumber(rightVal)
-
 		// Handle addition of numbers
 		if leftIsNum && rightIsNum {
 			return leftNum + rightNum
@@ -326,6 +347,8 @@ func ConvertStringToFloat(input string, line int) (float64, error) {
 func toNumber(value interface{}) (float64, bool) {
 	switch v := value.(type) {
 	case int:
+		return float64(v), true
+	case int64:
 		return float64(v), true
 	case float64:
 		return v, true

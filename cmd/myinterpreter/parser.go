@@ -379,7 +379,27 @@ func (p *Parser) parseUnary() Expr {
 			Line:     operator.Line,
 		}
 	}
-	return p.parsePrimary()
+	return p.parseCall()
+}
+
+func (p *Parser) parseCall() Expr {
+	expr := p.parsePrimary()
+	for p.match("LEFT_PAREN") {
+		expr = p.finishCall(expr)
+	}
+	return expr
+}
+
+func (p *Parser) finishCall(callee Expr) Expr {
+	var arguments []Expr
+	if !p.check("RIGHT_PAREN") {
+		arguments = append(arguments, p.parseAssignment())
+		for p.match("COMMA") {
+			arguments = append(arguments, p.parseAssignment())
+		}
+	}
+	p.consume("RIGHT_PAREN", "Expect ')' after arguments.")
+	return &CallExpr{Callee: callee, Arguments: arguments}
 }
 
 // parsePrimary handles numbers, strings, booleans, identifiers, and grouping.
