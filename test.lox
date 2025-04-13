@@ -1,8 +1,17 @@
+var celsius = 67;
+var fahrenheit = 0;
+var isHot = false;
+
 {
-    var world = "before";
-    print world;
-}
-{
-    var world = "after";
-    print world;
+  fahrenheit = celsius * 9 / 5 + 32;
+  print celsius; print fahrenheit;
+
+  if (celsius > 30) {
+    isHot = true;
+    print "It's a hot day. Stay hydrated!";
+  } else {
+    print "It's cold today. Wear a jacket!";
+  }
+
+  if (isHot) { print "Remember to use sunscreen!"; }
 }

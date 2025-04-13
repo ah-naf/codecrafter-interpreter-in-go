@@ -48,34 +48,48 @@ func (p *Parser) parseStatement() Stmt {
 }
 
 func (p *Parser) ifStatement() Stmt {
+	// Parse the condition.
 	p.consume("LEFT_PAREN", "Expect '(' after if statement")
-	condition := p.parseAssignment()
+	condition := p.parseAssignment() // condition expression
 	p.consume("RIGHT_PAREN", "Expect ')' after if condition expression")
 
+	// Parse the "if" branch.
+	var ifBranch []Stmt
 	if p.check("LEFT_BRACE") {
-		p.consume("LEFT_BRACE", "Expect '}' after if")
-		statements := []Stmt{}
-
+		p.consume("LEFT_BRACE", "Expect '{' after if")
 		for !p.isAtEnd() && !p.check("RIGHT_BRACE") {
-			statements = append(statements, p.parseStatement())
+			ifBranch = append(ifBranch, p.parseStatement())
 		}
-
 		p.consume("RIGHT_BRACE", "Expect '}' after block.")
-
-		return &IfStmt{
-			Condition: condition,
-			Body:      statements,
-		}
 	} else {
-		statement := p.parseStatement()
-		return &IfStmt{
-			Condition: condition,
-			Body:      []Stmt{statement},
+		// Single statement (not a block)
+		stmt := p.parseStatement()
+		ifBranch = []Stmt{stmt}
+	}
+
+	// Optional: Parse the "else" branch.
+	var elseBranch []Stmt
+	if p.match("ELSE") {
+		if p.check("LEFT_BRACE") {
+			p.consume("LEFT_BRACE", "Expect '{' after else")
+			for !p.isAtEnd() && !p.check("RIGHT_BRACE") {
+				elseBranch = append(elseBranch, p.parseStatement())
+			}
+			p.consume("RIGHT_BRACE", "Expect '}' after block in else")
+		} else {
+			// Single statement else without braces.
+			stmt := p.parseStatement()
+			elseBranch = []Stmt{stmt}
 		}
 	}
+
+	// Return an IfStmt that includes both branches.
+	return &IfStmt{
+		Condition: condition,
+		Body:      ifBranch,
+		Else:      elseBranch, // Will be nil or empty if no else clause.
+	}
 }
-
-
 
 // blockStatement parses a block of statements enclosed in braces {}
 func (p *Parser) blockStatement() Stmt {

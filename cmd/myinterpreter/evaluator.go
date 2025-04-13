@@ -18,6 +18,14 @@ func (i *IfStmt) Eval(env *Environment) interface{} {
 			result = stmt.Eval(localEnv)
 		}
 		return result
+	} else {
+		localEnv := NewEnvironmentWithParent(env)
+		var result interface{}
+
+		for _, stmt := range i.Else {
+			result = stmt.Eval(localEnv)
+		}
+		return result
 	}
 
 	return nil

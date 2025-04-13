@@ -132,6 +132,7 @@ func (b *BlockStmt) String() string {
 type IfStmt struct {
 	Condition Stmt
 	Body      []Stmt
+	Else      []Stmt
 }
 
 func (b *IfStmt) String() string {
@@ -140,5 +141,12 @@ func (b *IfStmt) String() string {
 		val += fmt.Sprintf("%s\n", statement.String())
 	}
 	val += "}"
+	if b.Else != nil && len(b.Else) > 0 {
+		val += " else {\n"
+		for _, statement := range b.Else {
+			val += fmt.Sprintf("%s\n", statement.String())
+		}
+		val += "}"
+	}
 	return val
 }
