@@ -9,11 +9,9 @@ import (
 
 func (i *IfStmt) Eval(env *Environment) interface{} {
 	condition := i.Condition.Eval(env)
-
 	if isTruthy(condition) {
 		localEnv := NewEnvironmentWithParent(env)
 		var result interface{}
-
 		for _, stmt := range i.Body {
 			result = stmt.Eval(localEnv)
 		}
@@ -21,32 +19,23 @@ func (i *IfStmt) Eval(env *Environment) interface{} {
 	} else {
 		localEnv := NewEnvironmentWithParent(env)
 		var result interface{}
-
 		for _, stmt := range i.Else {
 			result = stmt.Eval(localEnv)
 		}
 		return result
 	}
-
-	return nil
 }
 
-// Eval method for BlockStmt
 func (b *BlockStmt) Eval(env *Environment) interface{} {
-	// Create a new environment for the block
 	localEnv := NewEnvironmentWithParent(env)
-
-	// Evaluate each statement in the block with the new environment
 	for _, stmt := range b.Statements {
 		stmt.Eval(localEnv)
 	}
-
 	return nil
 }
 
-// Eval method for AssignStmt
 func (a *AssignStmt) Eval(env *Environment) interface{} {
-	value := a.Value.Eval(env) // Evaluate the right-hand side
+	value := a.Value.Eval(env)
 	if err := env.Assign(a.Name, value); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
 		os.Exit(70)
@@ -54,31 +43,14 @@ func (a *AssignStmt) Eval(env *Environment) interface{} {
 	return value
 }
 
-// Eval method for VarStmt
 func (v *VarStmt) Eval(env *Environment) interface{} {
 	var value interface{}
-
-	// Check if the variable is used before declaration
-	if !v.VarUsed {
-		_, err := env.Get(v.Name)
-		if err != nil {
-			// Add variable name and line number to the error message
-			fmt.Fprintf(os.Stderr, "Cannot use variable '%s' before declaration.\n[line %d]\n", v.Name, v.Line)
-			os.Exit(70)
-		}
-	}
-
-	// Evaluate the initializer if present
 	if v.Initializer != nil {
 		value = v.Initializer.Eval(env)
 	}
-
-	// Differentiate between declarations and assignments.
 	if v.VarUsed {
-		// Declaration: create a new variable.
 		env.Define(v.Name, value)
 	} else {
-		// Assignment: update an existing variable.
 		if err := env.Assign(v.Name, value); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %s\n", err)
 			os.Exit(70)
@@ -87,12 +59,11 @@ func (v *VarStmt) Eval(env *Environment) interface{} {
 	return "nil"
 }
 
-// Eval method for variable
 func (i *Identifier) Eval(env *Environment) interface{} {
 	value, err := env.Get(i.Name)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Undefined variable '%s'.\n[line %d]\n", i.Name, i.Line)
-		os.Exit(70) // Exit with code 70
+		os.Exit(70)
 	}
 	if value == nil {
 		value = "nil"
@@ -100,27 +71,23 @@ func (i *Identifier) Eval(env *Environment) interface{} {
 	return value
 }
 
-// Eval method for PrintStatement
 func (p *PrintStatement) Eval(env *Environment) interface{} {
-	value := p.Expression.Eval(env) // Evaluate the expression
-	fmt.Println(value)              // Print the evaluated value
+	value := p.Expression.Eval(env)
+	fmt.Println(value)
 	return nil
 }
 
-// Eval method for ExpressionStatement
 func (e *ExpressionStatement) Eval(env *Environment) interface{} {
-	return e.Expression.Eval(env) // Evaluate the expression
+	return e.Expression.Eval(env)
 }
 
-// Eval method for Literal evaluates and returns the value of the literal
 func (l *Literal) Eval(env *Environment) interface{} {
 	if l.Value == nil {
 		return "nil"
 	}
-	// If it's a number string, convert it
 	if l.Type == "number" {
 		if num, ok := l.Value.(string); ok && isNumber(num) {
-			value, err := ConvertStringToFloat(num, 0) // 0 for line number as it's a literal
+			value, err := ConvertStringToFloat(num, 0)
 			if err != nil {
 				fmt.Fprintln(os.Stderr, err)
 				return nil
@@ -128,8 +95,7 @@ func (l *Literal) Eval(env *Environment) interface{} {
 			return value
 		}
 	}
-
-	return l.Value // Return the literal value (true, false, or nil)
+	return l.Value
 }
 
 // Eval method for Grouping evaluates the inner expression
@@ -267,6 +233,12 @@ func (b *Binary) Eval(env *Environment) interface{} {
 		}
 
 		return false
+	case "or":
+		if isTruthy(b.Left.Eval(env)) {
+			return leftVal
+		}
+		return rightVal
+
 	}
 
 	return nil

@@ -11,7 +11,7 @@ type Parser struct {
 	mode  string
 }
 
-// NewParser initializes a new parser with the lexer input
+// NewParser initializes a new parser with the lexer input.
 func NewParser(lexer *Lexer, mode string) *Parser {
 	return &Parser{
 		lexer: lexer,
@@ -20,18 +20,16 @@ func NewParser(lexer *Lexer, mode string) *Parser {
 	}
 }
 
-// Parse starts parsing and returns the resulting AST
+// Parse starts parsing and returns the resulting AST.
 func (p *Parser) Parse() []Stmt {
 	statements := []Stmt{}
-
 	for !p.isAtEnd() {
 		statements = append(statements, p.parseStatement())
 	}
-
 	return statements
 }
 
-// parseStatement handles either print statements or expression statements
+// parseStatement handles print statements, declarations, assignments, block statements, if statements, etc.
 func (p *Parser) parseStatement() Stmt {
 	if p.match("PRINT") {
 		return p.printStatement()
@@ -48,12 +46,12 @@ func (p *Parser) parseStatement() Stmt {
 }
 
 func (p *Parser) ifStatement() Stmt {
-	// Parse the condition.
+	// Parse condition.
 	p.consume("LEFT_PAREN", "Expect '(' after if statement")
-	condition := p.parseAssignment() // condition expression
+	condition := p.parseAssignment() // Use assignment level so that side effects inside parentheses work.
 	p.consume("RIGHT_PAREN", "Expect ')' after if condition expression")
 
-	// Parse the "if" branch.
+	// Parse "if" branch.
 	var ifBranch []Stmt
 	if p.check("LEFT_BRACE") {
 		p.consume("LEFT_BRACE", "Expect '{' after if")
@@ -62,12 +60,11 @@ func (p *Parser) ifStatement() Stmt {
 		}
 		p.consume("RIGHT_BRACE", "Expect '}' after block.")
 	} else {
-		// Single statement (not a block)
 		stmt := p.parseStatement()
 		ifBranch = []Stmt{stmt}
 	}
 
-	// Optional: Parse the "else" branch.
+	// Optional: Parse "else" branch.
 	var elseBranch []Stmt
 	if p.match("ELSE") {
 		if p.check("LEFT_BRACE") {
@@ -77,68 +74,64 @@ func (p *Parser) ifStatement() Stmt {
 			}
 			p.consume("RIGHT_BRACE", "Expect '}' after block in else")
 		} else {
-			// Single statement else without braces.
 			stmt := p.parseStatement()
 			elseBranch = []Stmt{stmt}
 		}
 	}
 
-	// Return an IfStmt that includes both branches.
 	return &IfStmt{
 		Condition: condition,
 		Body:      ifBranch,
-		Else:      elseBranch, // Will be nil or empty if no else clause.
+		Else:      elseBranch,
 	}
 }
 
-// blockStatement parses a block of statements enclosed in braces {}
+// blockStatement parses a block of statements enclosed in braces.
 func (p *Parser) blockStatement() Stmt {
 	statements := []Stmt{}
-
-	// Loop to parse statements until a closing brace '}' is encountered
 	for !p.isAtEnd() && !p.check("RIGHT_BRACE") {
 		statements = append(statements, p.parseStatement())
 	}
-
-	// Ensure there's a closing brace for the block
 	p.consume("RIGHT_BRACE", "Expect '}' after block.")
-
 	return &BlockStmt{Statements: statements}
 }
 
-// varAssignment parses a variable assigment
+// varAssignment parses a variable assignment.
 func (p *Parser) varAssignment() Stmt {
 	identifier := p.previous()
-
 	var initializer Expr
 	if p.match("EQUAL") {
 		initializer = p.parseAssignment()
-
 	}
-
-	// Ensure there's a semicolon after the variable declaration
 	p.consume("SEMICOLON", "Expect ';' after variable declaration.")
-	return &VarStmt{Name: identifier.Lexeme, Initializer: initializer, VarUsed: false, Line: p.previous().Line}
+	return &VarStmt{
+		Name:        identifier.Lexeme,
+		Initializer: initializer,
+		VarUsed:     false,
+		Line:        identifier.Line,
+	}
 }
 
-// varDeclaration parses a variable declaration
+// varDeclaration parses a variable declaration.
 func (p *Parser) varDeclaration() Stmt {
-	// Expect an identifier after 'var'
 	p.consume("IDENTIFIER", "Expect variable name.")
 	identifier := p.previous()
 	var initializer Expr
-	if p.match("EQUAL") { // If '=' follows, there should be an initializer expression
+	if p.match("EQUAL") {
 		initializer = p.parseAssignment()
 	}
-
-	// Ensure there's a semicolon after the variable declaration
 	p.consume("SEMICOLON", "Expect ';' after variable declaration.")
-	return &VarStmt{Name: identifier.Lexeme, Initializer: initializer, VarUsed: true, Line: p.previous().Line}
+	return &VarStmt{
+		Name:        identifier.Lexeme,
+		Initializer: initializer,
+		VarUsed:     true,
+		Line:        identifier.Line,
+	}
 }
 
-// printStatement parses a print statement
+// printStatement parses a print statement.
 func (p *Parser) printStatement() Stmt {
-	expr := p.parseAssignment() // Parse the expression after "print"
+	expr := p.parseAssignment()
 	if p.mode == "run" {
 		if !p.checkSemicolon() {
 			fmt.Fprintf(os.Stderr, "[line %d]: Expect ';' after expression\n", p.previous().Line)
@@ -146,12 +139,12 @@ func (p *Parser) printStatement() Stmt {
 		}
 		p.consume("SEMICOLON", "Expect ';' after expression.")
 	}
-	return &PrintStatement{Expression: expr} // Return a PrintStatement node
+	return &PrintStatement{Expression: expr}
 }
 
-// expressionStatement parses an expression statement
+// expressionStatement parses an expression statement.
 func (p *Parser) expressionStatement() Stmt {
-	expr := p.parseAssignment() // Parse the expression
+	expr := p.parseAssignment()
 	if p.mode == "run" {
 		if !p.checkSemicolon() {
 			fmt.Fprintf(os.Stderr, "[line %d]: Expect ';' after expression", p.previous().Line)
@@ -159,91 +152,124 @@ func (p *Parser) expressionStatement() Stmt {
 		}
 		p.consume("SEMICOLON", "Expect ';' after expression.")
 	}
-	return &ExpressionStatement{Expression: expr} // Return an expression statement
+	return &ExpressionStatement{Expression: expr}
 }
 
+// parseAssignment parses assignment expressions (lowest precedence).
 func (p *Parser) parseAssignment() Stmt {
-	expr := p.parseEquality()
-
+	expr := p.parseLogicalOR()
 	for p.match("EQUAL") {
 		equals := p.previous()
 		value := p.parseAssignment()
-
 		if identifier, ok := expr.(*Identifier); ok {
-			return &AssignStmt{Name: identifier.Name, Value: value, Line: equals.Line}
+			return &AssignStmt{
+				Name:  identifier.Name,
+				Value: value,
+				Line:  equals.Line,
+			}
 		}
-		// p.error("Invalid Assignment ")
-
+		// Optionally, report an error for invalid assignment target.
 	}
 	return expr
 }
 
+// parseLogicalOR parses "or" expressions.
+func (p *Parser) parseLogicalOR() Expr {
+	expr := p.parseEquality()
+	for p.match("OR") {
+		operator := p.previous()
+		right := p.parseEquality()
+		expr = &Binary{
+			Left:     expr,
+			Operator: operator,
+			Right:    right,
+			Line:     operator.Line,
+		}
+	}
+	return expr
+}
+
+// parseEquality parses equality expressions.
 func (p *Parser) parseEquality() Stmt {
 	expr := p.parseComparison()
-
 	for p.match("EQUAL_EQUAL", "BANG_EQUAL") {
 		operator := p.previous()
 		right := p.parseComparison()
-		expr = &Binary{Left: expr, Operator: operator, Right: right, Line: operator.Line}
+		expr = &Binary{
+			Left:     expr,
+			Operator: operator,
+			Right:    right,
+			Line:     operator.Line,
+		}
 	}
-
 	return expr
 }
 
-// parseComparison handles >, <, >=, <= operators
+// parseComparison handles >, <, >=, <= operators.
 func (p *Parser) parseComparison() Expr {
-	expr := p.parseAdditionSubstraction() // Start by parsing addition and subtraction
-
-	for p.match("GREATER", "GREATER_EQUAL", "LESS", "LESS_EQUAL") { // Look for comparison operators
+	expr := p.parseAdditionSubstraction()
+	for p.match("GREATER", "GREATER_EQUAL", "LESS", "LESS_EQUAL") {
 		operator := p.previous()
-		right := p.parseAdditionSubstraction() // Parse the right-hand operand
-		expr = &Binary{Left: expr, Operator: operator, Right: right, Line: operator.Line}
+		right := p.parseAdditionSubstraction()
+		expr = &Binary{
+			Left:     expr,
+			Operator: operator,
+			Right:    right,
+			Line:     operator.Line,
+		}
 	}
-
 	return expr
 }
 
-// parseAdditionSubstraction handles + and - operators
+// parseAdditionSubstraction handles + and - operators.
 func (p *Parser) parseAdditionSubstraction() Expr {
 	expr := p.parseMultiplication()
-
 	for p.match("PLUS", "MINUS") {
 		operator := p.previous()
 		right := p.parseMultiplication()
-		expr = &Binary{Left: expr, Operator: operator, Right: right, Line: operator.Line}
+		expr = &Binary{
+			Left:     expr,
+			Operator: operator,
+			Right:    right,
+			Line:     operator.Line,
+		}
 	}
-
 	return expr
 }
 
-// parseMultiplication handles * and / operators with their precedence
+// parseMultiplication handles * and / operators.
+// (Note the change: we now call parseUnary() here to break the recursion cycle.)
 func (p *Parser) parseMultiplication() Expr {
-	expr := p.parseUnary() // Start by parsing unary operators
-
-	for p.match("STAR", "SLASH") { // Look for * or / operators
+	expr := p.parseUnary()
+	for p.match("STAR", "SLASH") {
 		operator := p.previous()
-		right := p.parseUnary() // Parse the right-hand operand (which could be a unary expression)
-		expr = &Binary{Left: expr, Operator: operator, Right: right, Line: operator.Line}
+		right := p.parseUnary()
+		expr = &Binary{
+			Left:     expr,
+			Operator: operator,
+			Right:    right,
+			Line:     operator.Line,
+		}
 	}
-
 	return expr
 }
 
-// parseUnary handles unary operators (e.g., -23, !true) or forwards to primary expressions
+// parseUnary handles unary operators or defers to primary expressions.
 func (p *Parser) parseUnary() Expr {
-	if p.match("BANG", "MINUS") { // Check for the unary operators
+	if p.match("BANG", "MINUS") {
 		operator := p.previous()
-		right := p.parseUnary() // Recursively parse the right-hand operand
-		return &Unary{Operator: operator, Right: right, Line: operator.Line}
+		right := p.parseUnary()
+		return &Unary{
+			Operator: operator,
+			Right:    right,
+			Line:     operator.Line,
+		}
 	}
-
-	// If it's not a unary expression, parse a primary expression
 	return p.parsePrimary()
 }
 
-// parsePrimary handles numbers, strings, booleans, and parentheses
+// parsePrimary handles numbers, strings, booleans, identifiers, and grouping.
 func (p *Parser) parsePrimary() Expr {
-
 	switch {
 	case p.match("TRUE"):
 		return &Literal{Value: true, Type: "boolean"}
@@ -256,18 +282,20 @@ func (p *Parser) parsePrimary() Expr {
 	case p.match("STRING"):
 		return &Literal{Value: p.previous().Literal, Type: "string"}
 	case p.match("IDENTIFIER"):
-		return &Identifier{Name: p.previous().Lexeme, Line: p.previous().Line}
+		return &Identifier{
+			Name: p.previous().Lexeme,
+			Line: p.previous().Line,
+		}
 	case p.match("LEFT_PAREN"):
-		expr := p.parseEquality() // Recursively parse the inner expression inside parentheses
+		expr := p.parseAssignment()
 		p.consume("RIGHT_PAREN", "Expect ')' after expression.")
-		return &Grouping{Expression: expr} // Directly return the expression, not a group node
+		return &Grouping{Expression: expr}
 	default:
 		p.error("Expected expression.")
 		return nil
 	}
 }
 
-// match checks if the current token matches one of the expected types
 func (p *Parser) match(types ...string) bool {
 	if p.isAtEnd() {
 		return false
@@ -281,24 +309,20 @@ func (p *Parser) match(types ...string) bool {
 	return false
 }
 
-// previous returns the last matched token
 func (p *Parser) previous() Token {
 	return p.lexer.tokens[p.pos-1]
 }
 
-// consume checks for a specific token and advances, or throws an error if it doesn't match
 func (p *Parser) consume(expectedType, errorMessage string) {
 	if !p.match(expectedType) {
 		p.error(errorMessage)
 	}
 }
 
-// isAtEnd checks if the parser has reached the end of the token list
 func (p *Parser) isAtEnd() bool {
 	return p.pos >= len(p.lexer.tokens)
 }
 
-// checkSemicolon checks if the current token is a semicolon without advancing the position
 func (p *Parser) checkSemicolon() bool {
 	if p.isAtEnd() {
 		return false
@@ -306,7 +330,6 @@ func (p *Parser) checkSemicolon() bool {
 	return p.lexer.tokens[p.pos].Type == "SEMICOLON"
 }
 
-// check checks if the current token is of the expected type without consuming it
 func (p *Parser) check(tokenType string) bool {
 	if p.isAtEnd() {
 		return false
@@ -319,7 +342,6 @@ func (p *Parser) error(msg string) {
 		token := p.lexer.tokens[p.pos]
 		fmt.Fprintf(os.Stderr, "[line %d] Error at '%s': %s\n", token.Line, token.Lexeme, msg)
 	} else {
-		// Handle the case where the token list is exhausted
 		fmt.Fprintf(os.Stderr, "[line %d] Error at end: %s\n", p.lexer.line, msg)
 	}
 	os.Exit(65)
