@@ -7,10 +7,18 @@ import (
 	"strconv"
 )
 
+func (r *ReturnStmt) Eval(env *Environment) interface{} {
+	var value interface{}
+	if r.Value != nil {
+		value = r.Value.Eval(env)
+	}
+	panic(ReturnValue{Value: value})
+}
+
 func (f *FunctionStmt) Eval(env *Environment) interface{} {
 	fn := &UserFunction{
 		Declaration: f,
-		Closure: env,
+		Closure:     env,
 	}
 	env.Define(f.Name, fn)
 	return nil
@@ -35,7 +43,11 @@ func (c *CallExpr) Eval(env *Environment) interface{} {
 		os.Exit(70)
 	}
 
-	return callable.Call(env, arguments)
+	val := callable.Call(env, arguments)
+	if val == nil {
+		return "nil"
+	}
+	return val
 }
 
 func (f *ForStmt) Eval(env *Environment) interface{} {

@@ -41,14 +41,27 @@ func (uf *UserFunction) String() string {
 func (uf *UserFunction) Call(env *Environment, arguments []interface{}) interface{} {
 	// Create a new environment that uses the closure (the defining environment) as parent.
 	localEnv := NewEnvironmentWithParent(uf.Closure)
-	// Bind each parameter to the corresponding argument.
 	for i, param := range uf.Declaration.Params {
 		localEnv.Define(param, arguments[i])
 	}
-	// Evaluate the function body.
-	var result interface{}
-	for _, stmt := range uf.Declaration.Body.Statements {
-		result = stmt.Eval(localEnv)
-	}
-	return result
+
+	var returnValue interface{} = nil
+	func() {
+		defer func() {
+			if r := recover(); r != nil {
+				if rv, ok := r.(ReturnValue); ok {
+					returnValue = rv.Value
+				} else {
+					// Re-panic if it's not a return value.
+					panic(r)
+				}
+			}
+		}()
+		// Evaluate the function body.
+		for _, stmt := range uf.Declaration.Body.Statements {
+			stmt.Eval(localEnv)
+		}
+	}()
+
+	return returnValue
 }

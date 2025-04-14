@@ -45,8 +45,23 @@ func (p *Parser) parseStatement() Stmt {
 		return p.forStatement()
 	} else if p.match("FUN") {
 		return p.functionDeclaration()
+	} else if p.match("RETURN") {
+		return p.returnStatement()
 	}
 	return p.expressionStatement()
+}
+
+func (p *Parser) returnStatement() Stmt {
+	keyword := p.previous()
+	var value Expr = nil
+	if !p.check("SEMICOLON") {
+		value = p.parseAssignment()
+	}
+	p.consume("SEMICOLON", "Expect ';' after return value.")
+	return &ReturnStmt{
+		Keyword: keyword,
+		Value:   value,
+	}
 }
 
 func (p *Parser) functionDeclaration() Stmt {

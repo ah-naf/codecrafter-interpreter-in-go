@@ -214,3 +214,19 @@ type FunctionStmt struct {
 func (f *FunctionStmt) String() string {
 	return fmt.Sprintf("fun %s(%v) %s", f.Name, f.Params, f.Body.String())
 }
+
+type ReturnStmt struct {
+	Keyword Token // The return keyword (to carry line info, etc.)
+	Value   Expr  // The expression being returned (can be nil for no value)
+}
+
+func (r *ReturnStmt) String() string {
+	if r.Value != nil {
+		return fmt.Sprintf("return %s", r.Value.String())
+	}
+	return "return"
+}
+
+type ReturnValue struct {
+    Value interface{}
+}
