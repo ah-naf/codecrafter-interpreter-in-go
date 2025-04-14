@@ -204,3 +204,13 @@ func (c *CallExpr) String() string {
 	}
 	return fmt.Sprintf("%s(%s)", c.Callee.String(), args)
 }
+
+type FunctionStmt struct {
+	Name   string
+	Params []string
+	Body   *BlockStmt
+}
+
+func (f *FunctionStmt) String() string {
+	return fmt.Sprintf("fun %s(%v) %s", f.Name, f.Params, f.Body.String())
+}

@@ -7,6 +7,15 @@ import (
 	"strconv"
 )
 
+func (f *FunctionStmt) Eval(env *Environment) interface{} {
+	fn := &UserFunction{
+		Declaration: f,
+		Closure: env,
+	}
+	env.Define(f.Name, fn)
+	return nil
+}
+
 func (c *CallExpr) Eval(env *Environment) interface{} {
 	calleval := c.Callee.Eval(env)
 

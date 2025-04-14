@@ -35,8 +35,6 @@ func (p *Parser) parseStatement() Stmt {
 		return p.printStatement()
 	} else if p.match("VAR") {
 		return p.varDeclaration()
-	} else if p.match("IDENTIFIER") {
-		return p.varAssignment()
 	} else if p.match("LEFT_BRACE") {
 		return p.blockStatement()
 	} else if p.match("IF") {
@@ -45,8 +43,38 @@ func (p *Parser) parseStatement() Stmt {
 		return p.whileStatement()
 	} else if p.match("FOR") {
 		return p.forStatement()
+	} else if p.match("FUN") {
+		return p.functionDeclaration()
 	}
 	return p.expressionStatement()
+}
+
+func (p *Parser) functionDeclaration() Stmt {
+	p.consume("IDENTIFIER", "Expect function name.")
+	name := p.previous().Lexeme
+
+	p.consume("LEFT_PAREN", "Expect '(' after function name.")
+	var parameters []string
+	if !p.check("RIGHT_PAREN") {
+		// Parse at least one parameter.
+		for {
+			p.consume("IDENTIFIER", "Expect parameter name.")
+			parameters = append(parameters, p.previous().Lexeme)
+			if !p.match("COMMA") {
+				break
+			}
+		}
+	}
+	p.consume("RIGHT_PAREN", "Expect ')' after parameters.")
+
+	p.consume("LEFT_BRACE", "Expect '{' before function body.")
+	body := p.blockStatement().(*BlockStmt)
+
+	return &FunctionStmt{
+		Name:   name,
+		Params: parameters,
+		Body:   body,
+	}
 }
 
 func (p *Parser) forStatement() Stmt {
