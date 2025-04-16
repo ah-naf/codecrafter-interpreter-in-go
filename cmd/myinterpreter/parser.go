@@ -49,7 +49,7 @@ func (p *Parser) parseStatement() Stmt {
 		return p.returnStatement()
 	} else if p.match("CLASS") { // <-- New branch for class declarations
 		return p.classDeclaration()
-	}
+	} 
 	return p.expressionStatement()
 }
 
@@ -539,6 +539,8 @@ func (p *Parser) parsePrimary() Expr {
 		expr := p.parseAssignment()
 		p.consume("RIGHT_PAREN", "Expect ')' after expression.")
 		return &Grouping{Expression: expr}
+	case p.match("THIS"):
+        return &This{Keyword: p.previous()}
 	default:
 		p.error("Expected expression.")
 		return nil

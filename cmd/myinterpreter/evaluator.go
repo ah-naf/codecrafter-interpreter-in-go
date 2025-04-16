@@ -7,6 +7,16 @@ import (
 	"strconv"
 )
 
+func (t *This) Eval(env *Environment) interface{} {
+    value, err := env.Get("this")
+    if err != nil {
+        // The error occurs if "this" is not defined.
+        fmt.Fprintf(os.Stderr, "[line %d] Error at 'this': Can't use 'this' outside of a class.\n", t.Keyword.Line)
+        os.Exit(70)
+    }
+    return value
+}
+
 func (g *Get) Eval(env *Environment) interface{} {
     obj := g.Object.Eval(env)
     instance, ok := obj.(*LoxInstance)

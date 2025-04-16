@@ -259,3 +259,11 @@ type Set struct {
 func (s *Set) String() string {
 	return fmt.Sprintf("(%s.%s = %s)", s.Object.String(), s.Name.Lexeme, s.Value.String())
 }
+
+type This struct {
+	Keyword Token
+}
+
+func (t *This) String() string {
+	return "this"
+}
