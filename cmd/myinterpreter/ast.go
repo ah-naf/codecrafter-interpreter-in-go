@@ -228,16 +228,34 @@ func (r *ReturnStmt) String() string {
 }
 
 type ReturnValue struct {
-    Value interface{}
+	Value interface{}
 }
 
-
 type ClassStmt struct {
-    Name    string
-    Methods []*FunctionStmt  // For now, the body is just a list of method declarations.
+	Name    string
+	Methods []*FunctionStmt // For now, the body is just a list of method declarations.
 }
 
 // String returns a string representation of the class statement.
 func (c *ClassStmt) String() string {
-    return fmt.Sprintf("class %s { ... }", c.Name)
+	return fmt.Sprintf("class %s { ... }", c.Name)
+}
+
+type Get struct {
+	Object Expr  // The instance expression.
+	Name   Token // The property name token.
+}
+
+func (g *Get) String() string {
+	return fmt.Sprintf("(%s.%s)", g.Object.String(), g.Name.Lexeme)
+}
+
+type Set struct {
+	Object Expr  // The instance expression.
+	Name   Token // The property name token.
+	Value  Expr  // The value to assign.
+}
+
+func (s *Set) String() string {
+	return fmt.Sprintf("(%s.%s = %s)", s.Object.String(), s.Name.Lexeme, s.Value.String())
 }

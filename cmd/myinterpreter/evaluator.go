@@ -7,6 +7,33 @@ import (
 	"strconv"
 )
 
+func (g *Get) Eval(env *Environment) interface{} {
+    obj := g.Object.Eval(env)
+    instance, ok := obj.(*LoxInstance)
+    if !ok {
+        fmt.Fprintln(os.Stderr, "Only instances have properties.")
+        os.Exit(70)
+    }
+    value, exists := instance.Get(g.Name)
+    if !exists {
+        fmt.Fprintf(os.Stderr, "Undefined property '%s'.\n", g.Name.Lexeme)
+        os.Exit(70)
+    }
+    return value
+}
+
+func (s *Set) Eval(env *Environment) interface{} {
+    obj := s.Object.Eval(env)
+    instance, ok := obj.(*LoxInstance)
+    if !ok {
+        fmt.Fprintln(os.Stderr, "Only instances have fields.")
+        os.Exit(70)
+    }
+    value := s.Value.Eval(env)
+    instance.Set(s.Name, value)
+    return value
+}
+
 func (c *ClassStmt) Eval(env *Environment) interface{} {
     // Build the method table by evaluating each method declared in the class.
     methods := make(map[string]*UserFunction)

@@ -1,8 +1,12 @@
-{
-  // Class declaration inside blocks should work
-  class Dinosaur {}
-  print "Inside block: Dinosaur exists";
-  print Dinosaur;
+// Multiple properties and conditional access
+class Robot {}
+var r2d2 = Robot();
+
+r2d2.model = "Astromech";
+r2d2.operational = false;
+
+if (r2d2.operational) {
+  print r2d2.model;
+  r2d2.mission = "Navigate hyperspace";
+  print r2d2.mission;
 }
-print "Accessing out-of-scope class:";
-print Dinosaur; // expect runtime error

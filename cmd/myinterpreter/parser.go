@@ -47,44 +47,44 @@ func (p *Parser) parseStatement() Stmt {
 		return p.functionDeclaration()
 	} else if p.match("RETURN") {
 		return p.returnStatement()
-	} else if p.match("CLASS") {  // <-- New branch for class declarations
-        return p.classDeclaration()
-    }
+	} else if p.match("CLASS") { // <-- New branch for class declarations
+		return p.classDeclaration()
+	}
 	return p.expressionStatement()
 }
 
 func (p *Parser) classDeclaration() Stmt {
-    // Consume the class name.
-    p.consume("IDENTIFIER", "Expect class name.")
-    className := p.previous().Lexeme
+	// Consume the class name.
+	p.consume("IDENTIFIER", "Expect class name.")
+	className := p.previous().Lexeme
 
-    // Consume the left brace that begins the class body.
-    p.consume("LEFT_BRACE", "Expect '{' before class body.")
-    var methods []*FunctionStmt
+	// Consume the left brace that begins the class body.
+	p.consume("LEFT_BRACE", "Expect '{' before class body.")
+	var methods []*FunctionStmt
 
-    // Parse methods inside the class body.
-    // (The body can be empty or include multiple method declarations.)
-    for !p.check("RIGHT_BRACE") && !p.isAtEnd() {
-        // For simplicity, expect methods to be declared with the "fun" keyword.
-        if p.match("FUN") {
-            // functionDeclaration returns a Stmt. We expect a *FunctionStmt.
-            stmt := p.functionDeclaration()
-            method, ok := stmt.(*FunctionStmt)
-            if !ok {
-                p.error("Expected method declaration in class body.")
-            }
-            methods = append(methods, method)
-        } else {
-            p.error("Expected method declaration in class body.")
-        }
-    }
-    p.consume("RIGHT_BRACE", "Expect '}' after class body.")
+	// Parse methods inside the class body.
+	// (The body can be empty or include multiple method declarations.)
+	for !p.check("RIGHT_BRACE") && !p.isAtEnd() {
+		// For simplicity, expect methods to be declared with the "fun" keyword.
+		if p.match("FUN") {
+			// functionDeclaration returns a Stmt. We expect a *FunctionStmt.
+			stmt := p.functionDeclaration()
+			method, ok := stmt.(*FunctionStmt)
+			if !ok {
+				p.error("Expected method declaration in class body.")
+			}
+			methods = append(methods, method)
+		} else {
+			p.error("Expected method declaration in class body.")
+		}
+	}
+	p.consume("RIGHT_BRACE", "Expect '}' after class body.")
 
-    // Return a new ClassStmt node.
-    return &ClassStmt{
-        Name:    className,
-        Methods: methods,
-    }
+	// Return a new ClassStmt node.
+	return &ClassStmt{
+		Name:    className,
+		Methods: methods,
+	}
 }
 
 func (p *Parser) returnStatement() Stmt {
@@ -336,17 +336,27 @@ func (p *Parser) expressionStatement() Stmt {
 // parseAssignment parses assignment expressions (lowest precedence).
 func (p *Parser) parseAssignment() Stmt {
 	expr := p.parseLogicalAND()
-	for p.match("EQUAL") {
+	if p.match("EQUAL") {
 		equals := p.previous()
 		value := p.parseAssignment()
-		if identifier, ok := expr.(*Identifier); ok {
+
+		// Handle assignment to a property (e.g. object.property = value)
+		if getExpr, ok := expr.(*Get); ok {
+			return &Set{
+				Object: getExpr.Object,
+				Name:   getExpr.Name,
+				Value:  value,
+			}
+		} else if identifier, ok := expr.(*Identifier); ok {
+			// Assignment to a plain variable.
 			return &AssignStmt{
 				Name:  identifier.Name,
 				Value: value,
 				Line:  equals.Line,
 			}
 		}
-		// Optionally, report an error for invalid assignment target.
+
+		p.error("Invalid assignment target.")
 	}
 	return expr
 }
@@ -463,8 +473,19 @@ func (p *Parser) parseUnary() Expr {
 
 func (p *Parser) parseCall() Expr {
 	expr := p.parsePrimary()
-	for p.match("LEFT_PAREN") {
-		expr = p.finishCall(expr)
+	for {
+		if p.match("LEFT_PAREN") {
+			expr = p.finishCall(expr)
+		} else if p.match("DOT") {
+			p.consume("IDENTIFIER", "Expect property name after '.'.")
+			name := p.previous()
+			expr = &Get{
+				Object: expr,
+				Name:   name,
+			}
+		} else {
+			break
+		}
 	}
 	return expr
 }
