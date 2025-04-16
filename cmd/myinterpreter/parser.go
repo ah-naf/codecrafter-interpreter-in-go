@@ -54,38 +54,53 @@ func (p *Parser) parseStatement() Stmt {
 }
 
 func (p *Parser) classDeclaration() Stmt {
-	// Consume the class name.
-	p.consume("IDENTIFIER", "Expect class name.")
-	className := p.previous().Lexeme
+    p.consume("IDENTIFIER", "Expect class name.")
+    className := p.previous().Lexeme
 
-	// Consume the left brace that begins the class body.
-	p.consume("LEFT_BRACE", "Expect '{' before class body.")
-	var methods []*FunctionStmt
+    p.consume("LEFT_BRACE", "Expect '{' before class body.")
+    var methods []*FunctionStmt
 
-	// Parse methods inside the class body.
-	// (The body can be empty or include multiple method declarations.)
-	for !p.check("RIGHT_BRACE") && !p.isAtEnd() {
-		// For simplicity, expect methods to be declared with the "fun" keyword.
-		if p.match("FUN") {
-			// functionDeclaration returns a Stmt. We expect a *FunctionStmt.
-			stmt := p.functionDeclaration()
-			method, ok := stmt.(*FunctionStmt)
-			if !ok {
-				p.error("Expected method declaration in class body.")
-			}
-			methods = append(methods, method)
-		} else {
-			p.error("Expected method declaration in class body.")
-		}
-	}
-	p.consume("RIGHT_BRACE", "Expect '}' after class body.")
+    // Read methods until the closing brace.
+    for !p.check("RIGHT_BRACE") && !p.isAtEnd() {
+        methods = append(methods, p.parseMethod())
+    }
+    p.consume("RIGHT_BRACE", "Expect '}' after class body.")
 
-	// Return a new ClassStmt node.
-	return &ClassStmt{
-		Name:    className,
-		Methods: methods,
-	}
+    return &ClassStmt{
+        Name:    className,
+        Methods: methods,
+    }
 }
+
+func (p *Parser) parseMethod() *FunctionStmt {
+    // The method name is an identifier.
+    p.consume("IDENTIFIER", "Expect method name.")
+    name := p.previous().Lexeme
+
+    // Parse the parameter list.
+    p.consume("LEFT_PAREN", "Expect '(' after method name.")
+    var parameters []string
+    if !p.check("RIGHT_PAREN") {
+        for {
+            p.consume("IDENTIFIER", "Expect parameter name.")
+            parameters = append(parameters, p.previous().Lexeme)
+            if !p.match("COMMA") {
+                break
+            }
+        }
+    }
+    p.consume("RIGHT_PAREN", "Expect ')' after parameters.")
+
+    // Parse the method body as a block.
+    p.consume("LEFT_BRACE", "Expect '{' before method body.")
+    body := p.blockStatement().(*BlockStmt)
+    return &FunctionStmt{
+        Name:   name,
+        Params: parameters,
+        Body:   body,
+    }
+}
+
 
 func (p *Parser) returnStatement() Stmt {
 	keyword := p.previous()

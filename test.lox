@@ -1,12 +1,33 @@
-// Multiple properties and conditional access
-class Robot {}
-var r2d2 = Robot();
+class Superhero {
+  useSpecialPower(hero) {
+    print "Using power: " + hero.specialPower;
+  }
 
-r2d2.model = "Astromech";
-r2d2.operational = false;
+  hasSpecialPower(hero) {
+    return hero.specialPower;
+  }
 
-if (r2d2.operational) {
-  print r2d2.model;
-  r2d2.mission = "Navigate hyperspace";
-  print r2d2.mission;
+  giveSpecialPower(hero, power) {
+    hero.specialPower = power;
+  }
 }
+
+// Methods in functions
+fun performHeroics(hero, superheroClass) {
+  if (superheroClass.hasSpecialPower(hero)) {
+    superheroClass.useSpecialPower(hero);
+  } else {
+    print "No special power available";
+  }
+}
+
+var superman = Superhero();
+var heroClass = Superhero();
+
+if (true) {
+  heroClass.giveSpecialPower(superman, "Flight");
+} else {
+  heroClass.giveSpecialPower(superman, "Strength");
+}
+
+performHeroics(superman, heroClass);

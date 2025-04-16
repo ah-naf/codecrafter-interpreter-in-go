@@ -38,6 +38,15 @@ func (uf *UserFunction) String() string {
 	return fmt.Sprintf("<fn %s>", uf.Declaration.Name)
 }
 
+func (fn *UserFunction) Bind(instance *LoxInstance) *UserFunction {
+    env := NewEnvironmentWithParent(fn.Closure)
+    env.Define("this", instance)
+    return &UserFunction{
+        Declaration: fn.Declaration,
+        Closure:     env,
+    }
+}
+
 func (uf *UserFunction) Call(env *Environment, arguments []interface{}) interface{} {
 	// Create a new environment that uses the closure (the defining environment) as parent.
 	localEnv := NewEnvironmentWithParent(uf.Closure)
