@@ -6,9 +6,10 @@ import (
 )
 
 type Parser struct {
-	lexer *Lexer
-	pos   int
-	mode  string
+	lexer   *Lexer
+	pos     int
+	mode    string
+	inClass bool
 }
 
 // NewParser initializes a new parser with the lexer input.
@@ -49,58 +50,61 @@ func (p *Parser) parseStatement() Stmt {
 		return p.returnStatement()
 	} else if p.match("CLASS") { // <-- New branch for class declarations
 		return p.classDeclaration()
-	} 
+	}
 	return p.expressionStatement()
 }
 
 func (p *Parser) classDeclaration() Stmt {
-    p.consume("IDENTIFIER", "Expect class name.")
-    className := p.previous().Lexeme
+	p.consume("IDENTIFIER", "Expect class name.")
+	className := p.previous().Lexeme
 
-    p.consume("LEFT_BRACE", "Expect '{' before class body.")
-    var methods []*FunctionStmt
+	p.consume("LEFT_BRACE", "Expect '{' before class body.")
 
-    // Read methods until the closing brace.
-    for !p.check("RIGHT_BRACE") && !p.isAtEnd() {
-        methods = append(methods, p.parseMethod())
-    }
-    p.consume("RIGHT_BRACE", "Expect '}' after class body.")
+	// Save the current state and mark that we're in a class.
+	enclosingClass := p.inClass
+	p.inClass = true
+	var methods []*FunctionStmt
+	for !p.check("RIGHT_BRACE") && !p.isAtEnd() {
+		methods = append(methods, p.parseMethod())
+	}
+	p.consume("RIGHT_BRACE", "Expect '}' after class body.")
+	// Restore the previous inClass state.
+	p.inClass = enclosingClass
 
-    return &ClassStmt{
-        Name:    className,
-        Methods: methods,
-    }
+	return &ClassStmt{
+		Name:    className,
+		Methods: methods,
+	}
 }
 
 func (p *Parser) parseMethod() *FunctionStmt {
-    // The method name is an identifier.
-    p.consume("IDENTIFIER", "Expect method name.")
-    name := p.previous().Lexeme
+	// The method name is an identifier.
+	p.consume("IDENTIFIER", "Expect method name.")
+	name := p.previous().Lexeme
 
-    // Parse the parameter list.
-    p.consume("LEFT_PAREN", "Expect '(' after method name.")
-    var parameters []string
-    if !p.check("RIGHT_PAREN") {
-        for {
-            p.consume("IDENTIFIER", "Expect parameter name.")
-            parameters = append(parameters, p.previous().Lexeme)
-            if !p.match("COMMA") {
-                break
-            }
-        }
-    }
-    p.consume("RIGHT_PAREN", "Expect ')' after parameters.")
+	// Parse the parameter list.
+	p.consume("LEFT_PAREN", "Expect '(' after method name.")
+	var parameters []string
+	if !p.check("RIGHT_PAREN") {
+		for {
+			p.consume("IDENTIFIER", "Expect parameter name.")
+			parameters = append(parameters, p.previous().Lexeme)
+			if !p.match("COMMA") {
+				break
+			}
+		}
+	}
+	p.consume("RIGHT_PAREN", "Expect ')' after parameters.")
 
-    // Parse the method body as a block.
-    p.consume("LEFT_BRACE", "Expect '{' before method body.")
-    body := p.blockStatement().(*BlockStmt)
-    return &FunctionStmt{
-        Name:   name,
-        Params: parameters,
-        Body:   body,
-    }
+	// Parse the method body as a block.
+	p.consume("LEFT_BRACE", "Expect '{' before method body.")
+	body := p.blockStatement().(*BlockStmt)
+	return &FunctionStmt{
+		Name:   name,
+		Params: parameters,
+		Body:   body,
+	}
 }
-
 
 func (p *Parser) returnStatement() Stmt {
 	keyword := p.previous()
@@ -540,7 +544,12 @@ func (p *Parser) parsePrimary() Expr {
 		p.consume("RIGHT_PAREN", "Expect ')' after expression.")
 		return &Grouping{Expression: expr}
 	case p.match("THIS"):
-        return &This{Keyword: p.previous()}
+		if !p.inClass {
+			// p.error("Can't use 'this' outside of a class.")
+			fmt.Fprintf(os.Stderr, "[line %d] Error at 'this': Can't use 'this' outside of a class.", p.lexer.tokens[p.pos].Line)
+			os.Exit(65)
+		}
+		return &This{Keyword: p.previous()}
 	default:
 		p.error("Expected expression.")
 		return nil

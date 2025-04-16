@@ -1,7 +1,3 @@
-class Spaceship {
-  identify() {
-    print this;
-  }
+fun notAMethod() {
+  print this;
 }
-
-Spaceship().identify();
