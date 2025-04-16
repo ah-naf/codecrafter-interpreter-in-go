@@ -230,3 +230,14 @@ func (r *ReturnStmt) String() string {
 type ReturnValue struct {
     Value interface{}
 }
+
+
+type ClassStmt struct {
+    Name    string
+    Methods []*FunctionStmt  // For now, the body is just a list of method declarations.
+}
+
+// String returns a string representation of the class statement.
+func (c *ClassStmt) String() string {
+    return fmt.Sprintf("class %s { ... }", c.Name)
+}

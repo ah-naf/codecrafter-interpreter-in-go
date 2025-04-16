@@ -7,6 +7,28 @@ import (
 	"strconv"
 )
 
+func (c *ClassStmt) Eval(env *Environment) interface{} {
+    // Build the method table by evaluating each method declared in the class.
+    methods := make(map[string]*UserFunction)
+    for _, method := range c.Methods {
+        // Wrap each method into a UserFunction.
+        // In more advanced versions you may want to distinguish static methods, initializers, etc.
+        function := &UserFunction{
+            Declaration: method,
+            Closure:     env,
+        }
+        methods[method.Name] = function
+    }
+    // Create the class object.
+    klass := &LoxClass{
+        Name:    c.Name,
+        Methods: methods,
+    }
+    // Define the class in the current environment.
+    env.Define(c.Name, klass)
+    return nil
+}
+
 func (r *ReturnStmt) Eval(env *Environment) interface{} {
 	var value interface{}
 	if r.Value != nil {

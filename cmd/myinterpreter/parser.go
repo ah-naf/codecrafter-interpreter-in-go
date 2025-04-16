@@ -47,8 +47,44 @@ func (p *Parser) parseStatement() Stmt {
 		return p.functionDeclaration()
 	} else if p.match("RETURN") {
 		return p.returnStatement()
-	}
+	} else if p.match("CLASS") {  // <-- New branch for class declarations
+        return p.classDeclaration()
+    }
 	return p.expressionStatement()
+}
+
+func (p *Parser) classDeclaration() Stmt {
+    // Consume the class name.
+    p.consume("IDENTIFIER", "Expect class name.")
+    className := p.previous().Lexeme
+
+    // Consume the left brace that begins the class body.
+    p.consume("LEFT_BRACE", "Expect '{' before class body.")
+    var methods []*FunctionStmt
+
+    // Parse methods inside the class body.
+    // (The body can be empty or include multiple method declarations.)
+    for !p.check("RIGHT_BRACE") && !p.isAtEnd() {
+        // For simplicity, expect methods to be declared with the "fun" keyword.
+        if p.match("FUN") {
+            // functionDeclaration returns a Stmt. We expect a *FunctionStmt.
+            stmt := p.functionDeclaration()
+            method, ok := stmt.(*FunctionStmt)
+            if !ok {
+                p.error("Expected method declaration in class body.")
+            }
+            methods = append(methods, method)
+        } else {
+            p.error("Expected method declaration in class body.")
+        }
+    }
+    p.consume("RIGHT_BRACE", "Expect '}' after class body.")
+
+    // Return a new ClassStmt node.
+    return &ClassStmt{
+        Name:    className,
+        Methods: methods,
+    }
 }
 
 func (p *Parser) returnStatement() Stmt {
