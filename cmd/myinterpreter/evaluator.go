@@ -8,62 +8,62 @@ import (
 )
 
 func (t *This) Eval(env *Environment) interface{} {
-    value, err := env.Get("this")
-    if err != nil {
-        // The error occurs if "this" is not defined.
-        fmt.Fprintf(os.Stderr, "[line %d] Error at 'this': Can't use 'this' outside of a class.\n", t.Keyword.Line)
-        os.Exit(70)
-    }
-    return value
+	value, err := env.Get("this")
+	if err != nil {
+		// The error occurs if "this" is not defined.
+		fmt.Fprintf(os.Stderr, "[line %d] Error at 'this': Can't use 'this' outside of a class.\n", t.Keyword.Line)
+		os.Exit(70)
+	}
+	return value
 }
 
 func (g *Get) Eval(env *Environment) interface{} {
-    obj := g.Object.Eval(env)
-    instance, ok := obj.(*LoxInstance)
-    if !ok {
-        fmt.Fprintln(os.Stderr, "Only instances have properties.")
-        os.Exit(70)
-    }
-    value, exists := instance.Get(g.Name)
-    if !exists {
-        fmt.Fprintf(os.Stderr, "Undefined property '%s'.\n", g.Name.Lexeme)
-        os.Exit(70)
-    }
-    return value
+	obj := g.Object.Eval(env)
+	instance, ok := obj.(*LoxInstance)
+	if !ok {
+		fmt.Fprintln(os.Stderr, "Only instances have properties.")
+		os.Exit(70)
+	}
+	value, exists := instance.Get(g.Name)
+	if !exists {
+		fmt.Fprintf(os.Stderr, "Undefined property '%s'.\n", g.Name.Lexeme)
+		os.Exit(70)
+	}
+	return value
 }
 
 func (s *Set) Eval(env *Environment) interface{} {
-    obj := s.Object.Eval(env)
-    instance, ok := obj.(*LoxInstance)
-    if !ok {
-        fmt.Fprintln(os.Stderr, "Only instances have fields.")
-        os.Exit(70)
-    }
-    value := s.Value.Eval(env)
-    instance.Set(s.Name, value)
-    return value
+	obj := s.Object.Eval(env)
+	instance, ok := obj.(*LoxInstance)
+	if !ok {
+		fmt.Fprintln(os.Stderr, "Only instances have fields.")
+		os.Exit(70)
+	}
+	value := s.Value.Eval(env)
+	instance.Set(s.Name, value)
+	return value
 }
 
 func (c *ClassStmt) Eval(env *Environment) interface{} {
-    // Build the method table by evaluating each method declared in the class.
-    methods := make(map[string]*UserFunction)
-    for _, method := range c.Methods {
-        // Wrap each method into a UserFunction.
-        // In more advanced versions you may want to distinguish static methods, initializers, etc.
-        function := &UserFunction{
-            Declaration: method,
-            Closure:     env,
-        }
-        methods[method.Name] = function
-    }
-    // Create the class object.
-    klass := &LoxClass{
-        Name:    c.Name,
-        Methods: methods,
-    }
-    // Define the class in the current environment.
-    env.Define(c.Name, klass)
-    return nil
+	// Build the method table by evaluating each method declared in the class.
+	methods := make(map[string]*UserFunction)
+	for _, method := range c.Methods {
+		// Wrap each method into a UserFunction.
+		// In more advanced versions you may want to distinguish static methods, initializers, etc.
+		function := &UserFunction{
+			Declaration: method,
+			Closure:     env,
+		}
+		methods[method.Name] = function
+	}
+	// Create the class object.
+	klass := &LoxClass{
+		Name:    c.Name,
+		Methods: methods,
+	}
+	// Define the class in the current environment.
+	env.Define(c.Name, klass)
+	return nil
 }
 
 func (r *ReturnStmt) Eval(env *Environment) interface{} {
@@ -71,7 +71,7 @@ func (r *ReturnStmt) Eval(env *Environment) interface{} {
 	if r.Value != nil {
 		value = r.Value.Eval(env)
 	}
-	panic(ReturnValue{Value: value})
+	panic(ReturnValue{Value: value, Line: r.Keyword.Line})
 }
 
 func (f *FunctionStmt) Eval(env *Environment) interface{} {

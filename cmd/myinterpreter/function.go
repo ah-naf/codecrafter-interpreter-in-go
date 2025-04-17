@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+)
 
 type Callable interface {
 	Arity() int
@@ -39,12 +42,12 @@ func (uf *UserFunction) String() string {
 }
 
 func (fn *UserFunction) Bind(instance *LoxInstance) *UserFunction {
-    env := NewEnvironmentWithParent(fn.Closure)
-    env.Define("this", instance)
-    return &UserFunction{
-        Declaration: fn.Declaration,
-        Closure:     env,
-    }
+	env := NewEnvironmentWithParent(fn.Closure)
+	env.Define("this", instance)
+	return &UserFunction{
+		Declaration: fn.Declaration,
+		Closure:     env,
+	}
 }
 
 func (uf *UserFunction) Call(env *Environment, arguments []interface{}) interface{} {
@@ -60,6 +63,10 @@ func (uf *UserFunction) Call(env *Environment, arguments []interface{}) interfac
 			if r := recover(); r != nil {
 				if rv, ok := r.(ReturnValue); ok {
 					returnValue = rv.Value
+					if uf.Declaration.Name == "init" && returnValue != nil {
+						fmt.Fprintf(os.Stderr, "[line %d] Error at 'return': Can't return a value from an initializer.", rv.Line)
+						os.Exit(65)
+					}
 				} else {
 					// Re-panic if it's not a return value.
 					panic(r)

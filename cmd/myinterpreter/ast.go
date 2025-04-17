@@ -229,6 +229,7 @@ func (r *ReturnStmt) String() string {
 
 type ReturnValue struct {
 	Value interface{}
+	Line  int
 }
 
 type ClassStmt struct {
