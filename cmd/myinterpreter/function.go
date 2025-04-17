@@ -72,5 +72,11 @@ func (uf *UserFunction) Call(env *Environment, arguments []interface{}) interfac
 		}
 	}()
 
+	if uf.Declaration.Name == "init" {
+		if instance, err := uf.Closure.Get("this"); err == nil {
+			return instance
+		}
+	}
+
 	return returnValue
 }

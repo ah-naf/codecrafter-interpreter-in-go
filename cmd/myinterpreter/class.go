@@ -16,6 +16,9 @@ func (c *LoxClass) String() string {
 }
 
 func (c *LoxClass) Arity() int {
+	if initializer, ok := c.Methods["init"]; ok {
+		return initializer.Arity()
+	}
 	return 0
 }
 
@@ -23,17 +26,20 @@ func (c *LoxClass) Call(env *Environment, arguments []interface{}) interface{} {
 	instance := &LoxInstance{
 		Klass:  c,
 		Fields: make(map[string]interface{}),
-		// A fields table could be added here later.
 	}
-	// If an initializer method were defined (commonly named "init"),
-	// you would look it up and call it here.
+	if initializer, ok := c.Methods["init"]; ok {
+		// Bind the initializer to the new instance.
+		boundInit := initializer.Bind(instance)
+		// Invoke with the passed arguments.
+		boundInit.Call(env, arguments)
+	}
+
 	return instance
 }
 
 type LoxInstance struct {
 	Klass  *LoxClass
 	Fields map[string]interface{}
-	// In a more advanced implementation, instance fields would be stored here.
 }
 
 // String returns a string representation of an instance.
