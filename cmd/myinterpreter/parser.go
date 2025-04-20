@@ -65,6 +65,10 @@ func (p *Parser) classDeclaration() Stmt {
 			Name: p.previous().Lexeme,
 			Line: p.previous().Line,
 		}
+		if(className == superclass.Name) {
+			p.customError("A class can't inherit from itself.", className, superclass.Line)
+			os.Exit(65)
+		}
 	}
 
 	p.consume("LEFT_BRACE", "Expect '{' before class body.")
@@ -81,9 +85,9 @@ func (p *Parser) classDeclaration() Stmt {
 	p.inClass = enclosingClass
 
 	return &ClassStmt{
-		Name:    className,
+		Name:       className,
 		Superclass: superclass,
-		Methods: methods,
+		Methods:    methods,
 	}
 }
 
