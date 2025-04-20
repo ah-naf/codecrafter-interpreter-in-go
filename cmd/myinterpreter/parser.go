@@ -6,10 +6,11 @@ import (
 )
 
 type Parser struct {
-	lexer   *Lexer
-	pos     int
-	mode    string
-	inClass bool
+	lexer        *Lexer
+	pos          int
+	mode         string
+	inClass      bool
+	currentClass string
 }
 
 // NewParser initializes a new parser with the lexer input.
@@ -59,6 +60,7 @@ func (p *Parser) classDeclaration() Stmt {
 	className := p.previous().Lexeme
 
 	var superclass *Identifier
+	previousClass := p.currentClass
 	if p.match("LESS") {
 		p.consume("IDENTIFIER", "Expect superclass name.")
 		superclass = &Identifier{
@@ -69,6 +71,9 @@ func (p *Parser) classDeclaration() Stmt {
 			p.customError("A class can't inherit from itself.", className, superclass.Line)
 			os.Exit(65)
 		}
+		p.currentClass = "SUBCLASS"
+	} else {
+		p.currentClass = "CLASS"
 	}
 
 	p.consume("LEFT_BRACE", "Expect '{' before class body.")
@@ -83,6 +88,7 @@ func (p *Parser) classDeclaration() Stmt {
 	p.consume("RIGHT_BRACE", "Expect '}' after class body.")
 	// Restore the previous inClass state.
 	p.inClass = enclosingClass
+	p.currentClass = previousClass
 
 	return &ClassStmt{
 		Name:       className,
@@ -549,12 +555,25 @@ func (p *Parser) parsePrimary() Expr {
 		}
 		return &This{Keyword: p.previous()}
 	case p.match("SUPER"):
+		if p.currentClass != "SUBCLASS" {
+			fmt.Fprintf(os.Stderr, "[line %d] Error at 'super': Can't use 'super' in a class with no superclass.\n", p.lexer.tokens[p.pos-1].Line)
+			os.Exit(65)
+		}
 		keyword := p.previous()
-		p.consume("DOT", "Expect '.' after 'super'.")
+		if !p.match("DOT") {
+			fmt.Fprintf(os.Stderr, "[line %d] Error at '%s': Expect '.' after 'super'.\n", p.lexer.tokens[p.pos].Line, p.lexer.tokens[p.pos].Lexeme)
+			os.Exit(65)
+		}
 		p.consume("IDENTIFIER", "Expect superclass method name.")
 		method := p.previous()
 		return &Super{Keyword: keyword, Method: method}
 	default:
+		if p.match("SUPER") {
+			if p.currentClass == "" {
+				fmt.Fprintf(os.Stderr, "[line %d] Error at 'super': Can't use 'super' outside of a class.\n", p.lexer.tokens[p.pos-1].Line)
+				os.Exit(65)
+			}
+		}
 		p.error("Expected expression.")
 		return nil
 	}
