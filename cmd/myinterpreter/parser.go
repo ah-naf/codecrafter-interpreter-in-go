@@ -65,7 +65,7 @@ func (p *Parser) classDeclaration() Stmt {
 			Name: p.previous().Lexeme,
 			Line: p.previous().Line,
 		}
-		if(className == superclass.Name) {
+		if className == superclass.Name {
 			p.customError("A class can't inherit from itself.", className, superclass.Line)
 			os.Exit(65)
 		}
@@ -548,6 +548,12 @@ func (p *Parser) parsePrimary() Expr {
 			os.Exit(65)
 		}
 		return &This{Keyword: p.previous()}
+	case p.match("SUPER"):
+		keyword := p.previous()
+		p.consume("DOT", "Expect '.' after 'super'.")
+		p.consume("IDENTIFIER", "Expect superclass method name.")
+		method := p.previous()
+		return &Super{Keyword: keyword, Method: method}
 	default:
 		p.error("Expected expression.")
 		return nil

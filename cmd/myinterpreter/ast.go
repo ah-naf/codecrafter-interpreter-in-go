@@ -269,3 +269,13 @@ type This struct {
 func (t *This) String() string {
 	return "this"
 }
+
+
+type Super struct {
+	Keyword Token
+	Method  Token
+}
+
+func (s *Super) String() string {
+	return fmt.Sprintf("super.%s", s.Method.Lexeme)
+}

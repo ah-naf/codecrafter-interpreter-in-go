@@ -7,6 +7,30 @@ import (
 	"strconv"
 )
 
+func (s *Super) Eval(env *Environment) interface{} {
+	superclassRaw, err := env.Get("super")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "[line %d] Error: Undefined 'super'.\n", s.Keyword.Line)
+		os.Exit(70)
+	}
+
+	superclass := superclassRaw.(*LoxClass)
+
+	instanceRaw, err := env.Get("this")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "[line %d] Error: Can't use 'super' outside a class.\n", s.Keyword.Line)
+		os.Exit(70)
+	}
+
+	instance := instanceRaw.(*LoxInstance)
+	method, ok := superclass.FindMethod(s.Method.Lexeme)
+	if !ok {
+		fmt.Fprintf(os.Stderr, "[line %d] Undefined property '%s'.\n", s.Method.Line, s.Method.Lexeme)
+		os.Exit(70)
+	}
+	return method.Bind(instance)
+}
+
 func (t *This) Eval(env *Environment) interface{} {
 	value, err := env.Get("this")
 	if err != nil {
@@ -61,12 +85,18 @@ func (c *ClassStmt) Eval(env *Environment) interface{} {
 		}
 	}
 
+	var classEnv = env
+	if superclass != nil {
+		classEnv = NewEnvironmentWithParent(env)
+		classEnv.Define("super", superclass)
+	}
+
 	// Build the method table by evaluating each method declared in the class.
 	methods := make(map[string]*UserFunction)
 	for _, method := range c.Methods {
 		function := &UserFunction{
 			Declaration: method,
-			Closure:     env,
+			Closure:     classEnv,
 		}
 		methods[method.Name] = function
 	}
