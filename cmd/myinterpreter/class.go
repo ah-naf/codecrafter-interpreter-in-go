@@ -6,8 +6,9 @@ import (
 )
 
 type LoxClass struct {
-	Name    string
-	Methods map[string]*UserFunction
+	Name       string
+	Superclass *LoxClass
+	Methods    map[string]*UserFunction
 }
 
 // String returns the class name when printed.
@@ -37,6 +38,16 @@ func (c *LoxClass) Call(env *Environment, arguments []interface{}) interface{} {
 	return instance
 }
 
+func (c *LoxClass) FindMethod(name string) (*UserFunction, bool) {
+	if method, ok := c.Methods[name]; ok {
+		return method, true
+	}
+	if c.Superclass != nil {
+		return c.Superclass.FindMethod(name)
+	}
+	return nil, false
+}
+
 type LoxInstance struct {
 	Klass  *LoxClass
 	Fields map[string]interface{}
@@ -52,7 +63,7 @@ func (inst *LoxInstance) Get(name Token) (interface{}, bool) {
 		return value, true
 	}
 
-	if method, ok := inst.Klass.Methods[name.Lexeme]; ok {
+	if method, ok := inst.Klass.FindMethod(name.Lexeme); ok {
 		// Bind the method to this instance.
 		return method.Bind(inst), true
 	}

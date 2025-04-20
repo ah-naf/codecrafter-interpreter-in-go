@@ -58,6 +58,15 @@ func (p *Parser) classDeclaration() Stmt {
 	p.consume("IDENTIFIER", "Expect class name.")
 	className := p.previous().Lexeme
 
+	var superclass *Identifier
+	if p.match("LESS") {
+		p.consume("IDENTIFIER", "Expect superclass name.")
+		superclass = &Identifier{
+			Name: p.previous().Lexeme,
+			Line: p.previous().Line,
+		}
+	}
+
 	p.consume("LEFT_BRACE", "Expect '{' before class body.")
 
 	// Save the current state and mark that we're in a class.
@@ -73,6 +82,7 @@ func (p *Parser) classDeclaration() Stmt {
 
 	return &ClassStmt{
 		Name:    className,
+		Superclass: superclass,
 		Methods: methods,
 	}
 }
@@ -288,22 +298,6 @@ func (p *Parser) blockStatement() Stmt {
 	}
 	p.consume("RIGHT_BRACE", "Expect '}' after block.")
 	return &BlockStmt{Statements: statements}
-}
-
-// varAssignment parses a variable assignment.
-func (p *Parser) varAssignment() Stmt {
-	identifier := p.previous()
-	var initializer Expr
-	if p.match("EQUAL") {
-		initializer = p.parseAssignment()
-	}
-	p.consume("SEMICOLON", "Expect ';' after variable declaration.")
-	return &VarStmt{
-		Name:        identifier.Lexeme,
-		Initializer: initializer,
-		VarUsed:     false,
-		Line:        identifier.Line,
-	}
 }
 
 // varDeclaration parses a variable declaration.

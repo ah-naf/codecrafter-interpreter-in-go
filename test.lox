@@ -1,11 +1,13 @@
-class Foo {
-  init() {
-    return this.callback();
-  }
+{
+  class A {}
 
-  callback() {
-    return "callback";
-  }
+  // B is a subclass of A
+  class B < A {}
+
+  // C is also a subclass of A
+  class C < A {}
+
+  print A();
+  print B();
+  print C();
 }
-
-Foo();

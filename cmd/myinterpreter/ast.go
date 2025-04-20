@@ -233,8 +233,9 @@ type ReturnValue struct {
 }
 
 type ClassStmt struct {
-	Name    string
-	Methods []*FunctionStmt // For now, the body is just a list of method declarations.
+	Name       string
+	Superclass *Identifier
+	Methods    []*FunctionStmt // For now, the body is just a list of method declarations.
 }
 
 // String returns a string representation of the class statement.

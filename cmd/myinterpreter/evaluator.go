@@ -45,23 +45,39 @@ func (s *Set) Eval(env *Environment) interface{} {
 }
 
 func (c *ClassStmt) Eval(env *Environment) interface{} {
+	var superclass *LoxClass
+	if c.Superclass != nil {
+		val, err := env.Get(c.Superclass.Name)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "[line %d] Error: Undefined superclass '%s'.\n", c.Superclass.Line, c.Superclass.Name)
+			os.Exit(70)
+		}
+
+		if sc, ok := val.(*LoxClass); ok {
+			superclass = sc
+		} else {
+			fmt.Fprintf(os.Stderr, "[line %d] Error: Superclass must be a class.\n", c.Superclass.Line)
+			os.Exit(70)
+		}
+	}
+
 	// Build the method table by evaluating each method declared in the class.
 	methods := make(map[string]*UserFunction)
 	for _, method := range c.Methods {
-		// Wrap each method into a UserFunction.
-		// In more advanced versions you may want to distinguish static methods, initializers, etc.
 		function := &UserFunction{
 			Declaration: method,
 			Closure:     env,
 		}
 		methods[method.Name] = function
 	}
+
 	// Create the class object.
 	klass := &LoxClass{
-		Name:    c.Name,
-		Methods: methods,
+		Name:       c.Name,
+		Methods:    methods,
+		Superclass: superclass,
 	}
-	// Define the class in the current environment.
+
 	env.Define(c.Name, klass)
 	return nil
 }
