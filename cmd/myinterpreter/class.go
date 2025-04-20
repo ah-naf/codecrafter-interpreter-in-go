@@ -28,14 +28,24 @@ func (c *LoxClass) Call(env *Environment, arguments []interface{}) interface{} {
 		Klass:  c,
 		Fields: make(map[string]interface{}),
 	}
-	if initializer, ok := c.Methods["init"]; ok {
-		// Bind the initializer to the new instance.
+
+	initializer := c.findInitializer()
+	if initializer != nil {
 		boundInit := initializer.Bind(instance)
-		// Invoke with the passed arguments.
 		boundInit.Call(env, arguments)
 	}
 
 	return instance
+}
+
+func (c *LoxClass) findInitializer() *UserFunction {
+	if init, ok := c.Methods["init"]; ok {
+		return init
+	}
+	if c.Superclass != nil {
+		return c.Superclass.findInitializer()
+	}
+	return nil
 }
 
 func (c *LoxClass) FindMethod(name string) (*UserFunction, bool) {
